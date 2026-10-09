@@ -1,0 +1,66 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+
+import { colors, radius, shadow, spacing, typography } from '../theme/tokens';
+
+interface SearchBarProps {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder: string;
+}
+
+/** `search-bar-pill` with the Rausch `search-orb` at its right edge. */
+export function SearchBar({ value, onChangeText, placeholder }: SearchBarProps) {
+  return (
+    <View style={[styles.bar, shadow]}>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.muted}
+        accessibilityLabel={placeholder}
+        autoCorrect={false}
+        returnKeyType="search"
+        style={styles.input}
+      />
+      {value.length > 0 ? (
+        <Pressable accessibilityLabel="Xoá tìm kiếm" hitSlop={spacing.sm} onPress={() => onChangeText('')} style={styles.clear}>
+          <Ionicons name="close" size={16} color={colors.ink} />
+        </Pressable>
+      ) : null}
+      <View style={styles.orb}>
+        <Ionicons name="search" size={20} color={colors.onPrimary} />
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    height: 64,
+    paddingLeft: spacing.lg,
+    paddingRight: spacing.sm,
+    borderRadius: radius.full,
+    backgroundColor: colors.canvas,
+  },
+  input: { ...typography.caption, lineHeight: undefined, flex: 1, height: '100%', color: colors.ink },
+  clear: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceStrong,
+  },
+  orb: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+  },
+});
