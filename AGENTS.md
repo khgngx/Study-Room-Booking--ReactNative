@@ -25,9 +25,12 @@ Run lint and typecheck before declaring any task done.
 
 ## Navigation & Routing
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
+- This project uses **React Navigation** (native stack + bottom tabs), as required by the course brief. Do not add Expo Router.
+- Navigators live in `src/navigation/RootNavigator.tsx`; the tree is chosen from the signed-in user's role.
+
+## Design system
+
+- `DESIGN.md` (Airbnb design analysis) is the source of truth for UI. Use the tokens in `src/theme/tokens.ts` and the components in `src/components/`; do not hardcode colors, radii or font sizes in screens.
 
 ## Building with EAS
 

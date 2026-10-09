@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "app-tmp",
-    "slug": "app-tmp",
+    "name": "VKU Study Rooms",
+    "slug": "vku-study-room-booking",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,7 +11,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -20,6 +20,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-font",
+      "expo-image",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Ứng dụng dùng camera để quét mã QR check-in phòng học.",
+          "recordAudioAndroid": false
+        }
+      ],
+      "expo-notifications"
+    ]
   }
 }
