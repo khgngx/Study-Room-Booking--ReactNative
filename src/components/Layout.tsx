@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCanAct } from '../hooks/usePresence';
 import { themed } from '../theme/themed';
-import { colors, spacing } from '../theme/tokens';
+import { colors, spacing, WIDE_LAYOUT_WIDTH } from '../theme/tokens';
 import { AppText } from './AppText';
 import { PreferencesBar } from './PreferencesBar';
 import { PresencePill } from './PresencePill';
@@ -79,9 +79,6 @@ interface ScreenProps {
   children: ReactNode;
 }
 
-/** From this width the display controls fit in the title row. Narrower screens reach them from the profile tab. */
-const WIDE_HEADER_WIDTH = 900;
-
 /**
  * Screen scaffold. Title row: calligraphic page title, the display controls (theme, language,
  * web/phone frame) in the centre, then the screen's own action and the presence pill.
@@ -90,7 +87,7 @@ export function Screen({ title, subtitle, action, headerAction, nested = false, 
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const canAct = useCanAct();
-  const wide = width >= WIDE_HEADER_WIDTH;
+  const wide = width >= WIDE_LAYOUT_WIDTH;
   return (
     <View style={[styles.screen, !nested && { paddingTop: insets.top + spacing.base }]}>
       <View style={styles.header}>

@@ -171,3 +171,6 @@ export const shadow = {
 
 /** Height shared by every compact control in a header row, so pills and buttons line up. */
 export const CONTROL_HEIGHT = 36;
+
+/** From this width the display controls (theme, language, frame) are shown on the page itself. Narrower screens reach them from the profile tab, or from the toolbar above the phone frame. */
+export const WIDE_LAYOUT_WIDTH = 900;

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { Animated, Easing, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Animated, Easing, KeyboardAvoidingView, Platform, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '../../components/AppText';
@@ -18,7 +18,7 @@ import type { AuthStackParams } from '../../navigation/types';
 import { useAccountStore } from '../../store/useAccountStore';
 import { useBookingStore } from '../../store/useBookingStore';
 import { themed } from '../../theme/themed';
-import { colors, radius, shadow, spacing } from '../../theme/tokens';
+import { colors, radius, shadow, spacing, WIDE_LAYOUT_WIDTH } from '../../theme/tokens';
 import { USE_NATIVE_DRIVER } from '../../theme/motion';
 
 const DEMO_IDS = SEED_USERS.filter((user) => user.id !== 'user-student-2').map((user) => user.id);
@@ -33,6 +33,7 @@ const frosted: object = Platform.OS === 'web' ? { backdropFilter: 'blur(14px) sa
 
 export function LoginScreen({ navigation }: NativeStackScreenProps<AuthStackParams, 'Login'>) {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const authenticate = useAccountStore((state) => state.authenticate);
   const users = useAccountStore((state) => state.users);
   const signIn = useBookingStore((state) => state.signIn);
@@ -66,7 +67,7 @@ export function LoginScreen({ navigation }: NativeStackScreenProps<AuthStackPara
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}
       >
-        <PreferencesBar />
+        {width >= WIDE_LAYOUT_WIDTH ? <PreferencesBar /> : null}
         <Animated.View style={[styles.glass, frosted, shadow, entrance(0)]}>
           <View style={styles.heading}>
             <Image source={LOGO} contentFit="contain" accessibilityLabel="VKU" style={styles.logo} />
