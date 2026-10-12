@@ -48,6 +48,14 @@ describe('filterRooms', () => {
     expect(ids({ equipment: ['ac', 'projector'] })).toEqual(['v']);
   });
 
+  it('filters by room type and searches the door code', () => {
+    const typed = [makeRoom({ id: 's', type: 'seminar', code: 'B-202' }), makeRoom({ id: 'l', type: 'lab', code: 'B-301' })];
+    const run = (filter: Partial<typeof EMPTY_FILTER>) => filterRooms(typed, { ...EMPTY_FILTER, ...filter }).map((room) => room.id);
+    expect(run({ type: 'seminar' })).toEqual(['s']);
+    expect(run({ type: null })).toEqual(['s', 'l']);
+    expect(run({ query: 'b-301' })).toEqual(['l']);
+  });
+
   it('applies minimum capacity inclusively and combines with other filters', () => {
     expect(ids({ minCapacity: 12 })).toEqual(['b', 'v']);
     expect(ids({ minCapacity: 12, buildings: ['B'], query: 'zzz' })).toEqual([]);

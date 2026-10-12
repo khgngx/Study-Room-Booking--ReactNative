@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 import { SEED_USERS } from '../data/seed';
-import type { Building, User, UserRole } from '../domain/types';
+import type { Building, Presence, User, UserRole } from '../domain/types';
 import { createId, jsonStorage } from './storage';
 
 export type RegisterResult = { ok: true; user: User } | { ok: false; reason: 'email_taken' };
@@ -12,6 +12,7 @@ interface AccountState {
   authenticate: (email: string, password: string) => User | null;
   register: (input: { name: string; email: string; password: string; studentId: string }) => RegisterResult;
   updateProfile: (id: string, changes: Pick<User, 'name' | 'studentId'>) => void;
+  setPresence: (id: string, presence: Presence) => void;
   setRole: (id: string, role: UserRole) => void;
   setAssignedBuildings: (id: string, buildings: Building[]) => void;
 }
@@ -41,6 +42,8 @@ export const useAccountStore = create<AccountState>()(
       },
       updateProfile: (id, changes) =>
         set((state) => ({ users: state.users.map((user) => (user.id === id ? { ...user, ...changes } : user)) })),
+      setPresence: (id, presence) =>
+        set((state) => ({ users: state.users.map((user) => (user.id === id ? { ...user, presence } : user)) })),
       setRole: (id, role) =>
         set((state) => ({
           users: state.users.map((user) =>

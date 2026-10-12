@@ -7,10 +7,11 @@ interface SearchBarProps {
   value: string;
   onChangeText: (text: string) => void;
   placeholder: string;
+  autoFocus?: boolean;
 }
 
 /** `search-bar-pill` with the Rausch `search-orb` at its right edge. */
-export function SearchBar({ value, onChangeText, placeholder }: SearchBarProps) {
+export function SearchBar({ value, onChangeText, placeholder, autoFocus = false }: SearchBarProps) {
   return (
     <View style={[styles.bar, shadow]}>
       <TextInput
@@ -20,6 +21,7 @@ export function SearchBar({ value, onChangeText, placeholder }: SearchBarProps) 
         placeholderTextColor={colors.muted}
         accessibilityLabel={placeholder}
         autoCorrect={false}
+        autoFocus={autoFocus}
         returnKeyType="search"
         style={styles.input}
       />

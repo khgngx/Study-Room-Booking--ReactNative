@@ -1,7 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { createBottomTabNavigator, type BottomTabNavigationOptions } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator, type NativeStackNavigationOptions } from '@react-navigation/native-stack';
 
+import { PresencePill } from '../components/PresencePill';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import { DashboardScreen } from '../screens/manager/DashboardScreen';
@@ -15,9 +16,10 @@ import { ShiftBookingsScreen } from '../screens/staff/ShiftBookingsScreen';
 import { MyBookingsScreen } from '../screens/student/MyBookingsScreen';
 import { RoomDetailScreen } from '../screens/student/RoomDetailScreen';
 import { RoomListScreen } from '../screens/student/RoomListScreen';
+import { can } from '../domain/permissions';
 import { useCurrentUser } from '../store/useBookingStore';
 import { colors, fonts } from '../theme/tokens';
-import type { AuthStackParams, DashboardStackParams, ExploreStackParams, RoomAdminStackParams, ShiftStackParams } from './types';
+import type { AuthStackParams, ExploreStackParams, ProfileStackParams, RoomAdminStackParams, ShiftStackParams } from './types';
 
 const stackOptions: NativeStackNavigationOptions = {
   headerShadowVisible: false,
@@ -26,6 +28,8 @@ const stackOptions: NativeStackNavigationOptions = {
   headerTitleStyle: { fontFamily: fonts.semibold, fontSize: 16 },
   headerStyle: { backgroundColor: colors.canvas },
   contentStyle: { backgroundColor: colors.canvas },
+  // Pushed screens keep the status control in the same top-right spot as tab roots.
+  headerRight: () => <PresencePill />,
 };
 
 const tabOptions: BottomTabNavigationOptions = {
@@ -45,10 +49,8 @@ const AuthStack = createNativeStackNavigator<AuthStackParams>();
 const ExploreStack = createNativeStackNavigator<ExploreStackParams>();
 const ShiftStack = createNativeStackNavigator<ShiftStackParams>();
 const RoomAdminStack = createNativeStackNavigator<RoomAdminStackParams>();
-const DashboardStack = createNativeStackNavigator<DashboardStackParams>();
-const StudentTabs = createBottomTabNavigator();
-const StaffTabs = createBottomTabNavigator();
-const ManagerTabs = createBottomTabNavigator();
+const ProfileStack = createNativeStackNavigator<ProfileStackParams>();
+const Tabs = createBottomTabNavigator();
 
 function AuthNavigator() {
   return (
@@ -90,57 +92,45 @@ function RoomAdminNavigator() {
   );
 }
 
-function DashboardNavigator() {
+function ProfileNavigator() {
   return (
-    <DashboardStack.Navigator screenOptions={stackOptions}>
-      <DashboardStack.Screen name="Dashboard" component={DashboardScreen} options={{ headerShown: false }} />
-      <DashboardStack.Screen name="Policy" component={PolicyScreen} options={{ title: 'Chính sách sử dụng' }} />
-    </DashboardStack.Navigator>
+    <ProfileStack.Navigator screenOptions={stackOptions}>
+      <ProfileStack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+      <ProfileStack.Screen name="Dashboard" component={DashboardScreen} options={{ title: '' }} />
+      <ProfileStack.Screen name="Users" component={UsersScreen} options={{ title: '' }} />
+      <ProfileStack.Screen name="Policy" component={PolicyScreen} options={{ title: 'Chính sách sử dụng' }} />
+    </ProfileStack.Navigator>
   );
 }
 
-function StudentNavigator() {
+/**
+ * Every role gets the same three tabs; what differs is the screen behind "Phòng" and "Lịch của tôi".
+ * Students browse and book; staff and managers operate rooms and their check-in shift.
+ */
+function MainTabs({ operator }: { operator: boolean }) {
   return (
-    <StudentTabs.Navigator screenOptions={tabOptions}>
-      <StudentTabs.Screen name="Explore" component={ExploreNavigator} options={{ title: 'Khám phá', tabBarIcon: tabIcon('search') }} />
-      <StudentTabs.Screen name="MyBookings" component={MyBookingsScreen} options={{ title: 'Đặt chỗ', tabBarIcon: tabIcon('calendar-outline') }} />
-      <StudentTabs.Screen name="Profile" component={ProfileScreen} options={{ title: 'Hồ sơ', tabBarIcon: tabIcon('person-circle-outline') }} />
-    </StudentTabs.Navigator>
+    <Tabs.Navigator screenOptions={tabOptions}>
+      <Tabs.Screen
+        name="Rooms"
+        component={operator ? RoomAdminNavigator : ExploreNavigator}
+        options={{
+          title: 'Phòng',
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="door" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="Schedule"
+        component={operator ? ShiftNavigator : MyBookingsScreen}
+        options={{ title: 'Lịch của tôi', tabBarIcon: tabIcon('calendar-outline') }}
+      />
+      <Tabs.Screen name="Me" component={ProfileNavigator} options={{ title: 'Cá nhân', tabBarIcon: tabIcon('person-outline') }} />
+    </Tabs.Navigator>
   );
 }
 
-function LabStaffNavigator() {
-  return (
-    <StaffTabs.Navigator screenOptions={tabOptions}>
-      <StaffTabs.Screen name="Shift" component={ShiftNavigator} options={{ title: 'Ca trực', tabBarIcon: tabIcon('clipboard-outline') }} />
-      <StaffTabs.Screen name="Rooms" component={RoomAdminNavigator} options={{ title: 'Phòng', tabBarIcon: tabIcon('business-outline') }} />
-      <StaffTabs.Screen name="Profile" component={ProfileScreen} options={{ title: 'Hồ sơ', tabBarIcon: tabIcon('person-circle-outline') }} />
-    </StaffTabs.Navigator>
-  );
-}
-
-function FacilityManagerNavigator() {
-  return (
-    <ManagerTabs.Navigator screenOptions={tabOptions}>
-      <ManagerTabs.Screen name="Overview" component={DashboardNavigator} options={{ title: 'Tổng quan', tabBarIcon: tabIcon('stats-chart-outline') }} />
-      <ManagerTabs.Screen name="Rooms" component={RoomAdminNavigator} options={{ title: 'Phòng', tabBarIcon: tabIcon('business-outline') }} />
-      <ManagerTabs.Screen name="Shift" component={ShiftNavigator} options={{ title: 'Check-in', tabBarIcon: tabIcon('clipboard-outline') }} />
-      <ManagerTabs.Screen name="Users" component={UsersScreen} options={{ title: 'Tài khoản', tabBarIcon: tabIcon('people-outline') }} />
-      <ManagerTabs.Screen name="Profile" component={ProfileScreen} options={{ title: 'Hồ sơ', tabBarIcon: tabIcon('person-circle-outline') }} />
-    </ManagerTabs.Navigator>
-  );
-}
-
-/** Picks the navigator tree from the signed-in user's role. */
+/** Signed-out users see auth; everyone else gets the three tabs, wired by role. */
 export function RootNavigator() {
   const user = useCurrentUser();
   if (!user) return <AuthNavigator />;
-  switch (user.role) {
-    case 'student':
-      return <StudentNavigator />;
-    case 'lab_staff':
-      return <LabStaffNavigator />;
-    case 'facility_manager':
-      return <FacilityManagerNavigator />;
-  }
+  return <MainTabs operator={can(user.role, 'checkin.verify')} />;
 }

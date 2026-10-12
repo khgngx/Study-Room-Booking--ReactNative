@@ -34,6 +34,23 @@ export const useRoomStore = create<RoomState>()(
           ),
         })),
     }),
-    { name: 'vku-rooms', storage: jsonStorage },
+    {
+      name: 'vku-rooms',
+      storage: jsonStorage,
+      version: 2,
+      // v0 rooms had no `code` and used the door code as their name; v1 rooms had no `description`.
+      migrate: (persisted) => {
+        const saved = (persisted as { rooms?: (Omit<Room, 'code'> & { code?: string })[] }).rooms ?? SEED_ROOMS;
+        const rooms = saved.map((room): Room => {
+          const seed = SEED_ROOMS.find((candidate) => candidate.id === room.id);
+          const description = room.description ?? seed?.description;
+          if (room.code) return { ...room, code: room.code, description };
+          return seed
+            ? { ...room, code: seed.code, name: seed.name, type: seed.type, description }
+            : { ...room, code: room.name };
+        });
+        return { rooms };
+      },
+    },
   ),
 );

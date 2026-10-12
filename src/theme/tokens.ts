@@ -1,24 +1,33 @@
-// Design tokens transcribed from DESIGN.md (Airbnb design analysis).
+// Type, spacing and shape tokens transcribed from DESIGN.md (Airbnb design analysis).
 // Airbnb Cereal VF is proprietary; Inter is the substitute DESIGN.md recommends.
 
+// Colours follow the classic Airbnb brand palette (Rausch, Babu, Hof, Foggy) rather than the
+// newer values listed in DESIGN.md; neutrals are tints of the palette's warm light grey.
 export const colors = {
-  primary: '#ff385c',
-  primaryActive: '#e00b41',
-  primaryDisabled: '#ffd1da',
+  // Rausch.
+  primary: '#ff5a5f',
+  primaryActive: '#e61e4d',
+  primaryDisabled: '#ffcfd0',
   error: '#c13515',
-  ink: '#222222',
-  body: '#3f3f3f',
-  muted: '#6a6a6a',
-  mutedSoft: '#929292',
-  hairline: '#dddddd',
-  hairlineSoft: '#ebebeb',
-  borderStrong: '#c1c1c1',
+  // Babu: the positive signal (free rooms, presence) that Rausch and Hof cannot carry.
+  success: '#00a699',
+  // Kazan: Babu is too light for small text on white.
+  successInk: '#007a87',
+  // Hof.
+  ink: '#484848',
+  body: '#484848',
+  // Foggy.
+  muted: '#767676',
+  mutedSoft: '#9b9b9b',
+  hairline: '#dfe0dd',
+  hairlineSoft: '#ecedeb',
+  borderStrong: '#cdcfca',
   canvas: '#ffffff',
-  surfaceSoft: '#f7f7f7',
-  surfaceStrong: '#f2f2f2',
+  surfaceSoft: '#f7f7f6',
+  surfaceStrong: '#f0f1ef',
   onPrimary: '#ffffff',
   onDark: '#ffffff',
-  scrim: 'rgba(0, 0, 0, 0.5)',
+  scrim: 'rgba(72, 72, 72, 0.6)',
 } as const;
 
 export type ColorToken = keyof typeof colors;
@@ -44,6 +53,9 @@ export const typography = {
   caption: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 18 },
   captionSm: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 16 },
   badge: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 13 },
+  // Door-code plates: the room code set like signage.
+  plateLg: { fontFamily: fonts.bold, fontSize: 44, lineHeight: 48, letterSpacing: -0.5 },
+  plate: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 22 },
   microLabel: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 16 },
   buttonMd: { fontFamily: fonts.medium, fontSize: 16, lineHeight: 20 },
   buttonSm: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 18 },

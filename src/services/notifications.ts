@@ -39,7 +39,7 @@ async function ensurePermission(): Promise<boolean> {
  */
 export async function scheduleCheckInReminder(
   booking: Pick<Booking, 'id' | 'dateKey' | 'startMinutes' | 'endMinutes'>,
-  room: Pick<Room, 'name'>,
+  room: Pick<Room, 'code'>,
   minutesBefore: number,
 ): Promise<string | null> {
   const fireAt = dateFromKey(booking.dateKey, booking.startMinutes - minutesBefore);
@@ -47,7 +47,7 @@ export async function scheduleCheckInReminder(
   if (!(await ensurePermission())) return null;
   return Notifications.scheduleNotificationAsync({
     content: {
-      title: `Sắp đến giờ check-in phòng ${room.name}`,
+      title: `Sắp đến giờ check-in phòng ${room.code}`,
       body: `Ca ${formatRange(booking.startMinutes, booking.endMinutes)} bắt đầu sau ${minutesBefore} phút. Mở mã QR để check-in.`,
       data: { bookingId: booking.id },
     },

@@ -1,7 +1,5 @@
-import { Ionicons } from '@expo/vector-icons';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Divider, Screen, screenStyles } from '../../components/Layout';
@@ -9,7 +7,6 @@ import { generateSlots } from '../../domain/slots';
 import { computeStats } from '../../domain/stats';
 import { addDays, dateFromKey, toDateKey } from '../../domain/time';
 import { useNow } from '../../hooks/useNow';
-import type { DashboardStackParams } from '../../navigation/types';
 import { useBookingStore } from '../../store/useBookingStore';
 import { usePolicyStore } from '../../store/usePolicyStore';
 import { useRoomStore } from '../../store/useRoomStore';
@@ -18,7 +15,7 @@ import { colors, radius, spacing } from '../../theme/tokens';
 const RANGE_DAYS = 7;
 const percent = (ratio: number) => `${Math.round(ratio * 100)}%`;
 
-export function DashboardScreen({ navigation }: NativeStackScreenProps<DashboardStackParams, 'Dashboard'>) {
+export function DashboardScreen() {
   const bookings = useBookingStore((state) => state.bookings);
   const rooms = useRoomStore((state) => state.rooms);
   const policy = usePolicyStore((state) => state.policy);
@@ -40,7 +37,7 @@ export function DashboardScreen({ navigation }: NativeStackScreenProps<Dashboard
   const topCount = stats.topRooms[0]?.count ?? 0;
 
   return (
-    <Screen title="Tổng quan" subtitle={`${RANGE_DAYS} ngày gần nhất`}>
+    <Screen nested title="Tổng quan" subtitle={`${RANGE_DAYS} ngày gần nhất`}>
       <ScrollView contentContainerStyle={screenStyles.content}>
         <View style={styles.hero}>
           <AppText variant="ratingDisplay">{percent(stats.utilization)}</AppText>
@@ -68,7 +65,9 @@ export function DashboardScreen({ navigation }: NativeStackScreenProps<Dashboard
             stats.topRooms.map(({ room, count }) => (
               <View key={room.id} style={styles.rank}>
                 <View style={styles.rankHeader}>
-                  <AppText variant="titleSm">{room.name}</AppText>
+                  <AppText variant="titleSm" numberOfLines={1} style={styles.rankName}>
+                    {room.code} · {room.name}
+                  </AppText>
                   <AppText variant="bodySm" color="muted">
                     {count} lượt
                   </AppText>
@@ -80,17 +79,6 @@ export function DashboardScreen({ navigation }: NativeStackScreenProps<Dashboard
             ))
           )}
         </View>
-        <Divider />
-        <Pressable accessibilityRole="button" onPress={() => navigation.navigate('Policy')} style={styles.link}>
-          <View style={styles.linkText}>
-            <AppText variant="titleMd">Chính sách sử dụng</AppText>
-            <AppText variant="bodySm" color="muted">
-              Giờ mở cửa, độ dài khung giờ, giới hạn lượt đặt
-            </AppText>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.ink} />
-        </Pressable>
-        <Divider />
       </ScrollView>
     </Screen>
   );
@@ -103,9 +91,8 @@ const styles = StyleSheet.create({
   column: { flex: 1, alignItems: 'center', gap: spacing.xs },
   columnDivider: { borderLeftWidth: 1, borderLeftColor: colors.hairline },
   rank: { gap: spacing.sm },
+  rankName: { flex: 1 },
   rankHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   track: { height: 8, borderRadius: radius.full, backgroundColor: colors.surfaceStrong },
   fill: { height: 8, borderRadius: radius.full, backgroundColor: colors.ink },
-  link: { flexDirection: 'row', alignItems: 'center', gap: spacing.base, paddingVertical: spacing.lg },
-  linkText: { flex: 1, gap: spacing.xxs },
 });

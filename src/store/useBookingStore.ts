@@ -3,26 +3,28 @@ import { persist } from 'zustand/middleware';
 
 import { buildSeedBookings } from '../data/seed';
 import { validateCheckIn, type CheckInRejection } from '../domain/checkin';
-import { getSlotAvailability, type SlotAvailability } from '../domain/conflict';
-import { can } from '../domain/permissions';
+import { getSlotAvailability, validateBookingRange, type MinuteRange, type RangeRejection, type SlotAvailability } from '../domain/conflict';
+import { can, getPresence, receivesNotifications } from '../domain/permissions';
 import { dateFromKey } from '../domain/time';
-import type { Booking, Slot, User } from '../domain/types';
+import type { Booking, Presence, User } from '../domain/types';
 import { cancelReminder, scheduleCheckInReminder } from '../services/notifications';
 import { createId, jsonStorage } from './storage';
 import { useAccountStore } from './useAccountStore';
 import { usePolicyStore } from './usePolicyStore';
 import { useRoomStore } from './useRoomStore';
 
-type BookingFailure = Exclude<SlotAvailability, 'available'> | 'forbidden' | 'room_not_found';
+type BookingFailure = Exclude<SlotAvailability, 'available'> | RangeRejection | 'forbidden' | 'inactive' | 'room_not_found';
 export type CreateBookingResult = { ok: true; booking: Booking } | { ok: false; reason: BookingFailure };
-export type StaffActionResult = { ok: true } | { ok: false; reason: CheckInRejection | 'forbidden' | 'not_started' };
+export type StaffActionResult = { ok: true } | { ok: false; reason: CheckInRejection | 'forbidden' | 'inactive' | 'not_started' };
 
 interface BookingState {
   session: { userId: string } | null;
   bookings: Booking[];
   signIn: (userId: string) => void;
   signOut: () => void;
-  createBooking: (input: { roomId: string; dateKey: string; slot: Slot }) => Promise<CreateBookingResult>;
+  changePresence: (presence: Presence) => Promise<void>;
+  /** `slot` is a generated slot or a custom time; both go through the same checks. */
+  createBooking: (input: { roomId: string; dateKey: string; slot: MinuteRange }) => Promise<CreateBookingResult>;
   cancelBooking: (bookingId: string) => Promise<void>;
   checkIn: (bookingId: string) => StaffActionResult;
   markNoShow: (bookingId: string) => StaffActionResult;
@@ -33,6 +35,8 @@ function currentUser(session: BookingState['session']): User | undefined {
   if (!session) return undefined;
   return useAccountStore.getState().users.find((user) => user.id === session.userId);
 }
+
+const isInactive = (user: User) => getPresence(user) === 'inactive';
 
 const createCode = () => Math.random().toString(36).slice(2, 8).toUpperCase().padEnd(6, '0');
 
@@ -45,12 +49,45 @@ export const useBookingStore = create<BookingState>()(
       signIn: (userId) => set({ session: { userId } }),
       signOut: () => set({ session: null }),
 
+      changePresence: async (presence) => {
+        const user = currentUser(get().session);
+        if (!user) return;
+        useAccountStore.getState().setPresence(user.id, presence);
+
+        const upcoming = get().bookings.filter((item) => item.userId === user.id && item.status === 'confirmed');
+        const setReminder = (bookingId: string, notificationId: string | undefined) =>
+          set((state) => ({
+            bookings: state.bookings.map((item) => (item.id === bookingId ? { ...item, notificationId } : item)),
+          }));
+
+        if (!receivesNotifications({ presence })) {
+          // Busy or inactive: pull every pending reminder so the app stays silent.
+          for (const booking of upcoming.filter((item) => item.notificationId)) {
+            setReminder(booking.id, undefined);
+            await cancelReminder(booking.notificationId);
+          }
+          return;
+        }
+        // Back online: restore reminders that were pulled or never scheduled.
+        const { rooms } = useRoomStore.getState();
+        const { reminderMinutes } = usePolicyStore.getState().policy;
+        for (const booking of upcoming.filter((item) => !item.notificationId)) {
+          const room = rooms.find((candidate) => candidate.id === booking.roomId);
+          if (!room) continue;
+          const notificationId = await scheduleCheckInReminder(booking, room, reminderMinutes);
+          if (notificationId) setReminder(booking.id, notificationId);
+        }
+      },
+
       createBooking: async ({ roomId, dateKey, slot }) => {
         const user = currentUser(get().session);
         if (!user || !can(user.role, 'booking.create')) return { ok: false, reason: 'forbidden' };
+        if (isInactive(user)) return { ok: false, reason: 'inactive' };
         const room = useRoomStore.getState().rooms.find((candidate) => candidate.id === roomId);
         if (!room) return { ok: false, reason: 'room_not_found' };
         const { policy } = usePolicyStore.getState();
+        const rangeRejection = validateBookingRange(slot, policy);
+        if (rangeRejection) return { ok: false, reason: rangeRejection };
 
         // Re-checked here, not just in the UI, so a stale screen can never double-book.
         const availability = getSlotAvailability({
@@ -77,7 +114,9 @@ export const useBookingStore = create<BookingState>()(
         };
         set((state) => ({ bookings: [...state.bookings, booking] }));
 
-        const notificationId = await scheduleCheckInReminder(booking, room, policy.reminderMinutes);
+        const notificationId = receivesNotifications(user)
+          ? await scheduleCheckInReminder(booking, room, policy.reminderMinutes)
+          : null;
         if (!notificationId) return { ok: true, booking };
         const withReminder = { ...booking, notificationId };
         set((state) => ({
@@ -89,7 +128,8 @@ export const useBookingStore = create<BookingState>()(
       cancelBooking: async (bookingId) => {
         const user = currentUser(get().session);
         const booking = get().bookings.find((item) => item.id === bookingId);
-        if (!user || !booking || booking.userId !== user.id || booking.status !== 'confirmed') return;
+        if (!user || isInactive(user)) return;
+        if (!booking || booking.userId !== user.id || booking.status !== 'confirmed') return;
         set((state) => ({
           bookings: state.bookings.map((item) =>
             item.id === bookingId ? { ...item, status: 'cancelled', notificationId: undefined } : item,
@@ -101,6 +141,7 @@ export const useBookingStore = create<BookingState>()(
       checkIn: (bookingId) => {
         const staff = currentUser(get().session);
         if (!staff || !can(staff.role, 'checkin.verify')) return { ok: false, reason: 'forbidden' };
+        if (isInactive(staff)) return { ok: false, reason: 'inactive' };
         const booking = get().bookings.find((item) => item.id === bookingId);
         const room = useRoomStore.getState().rooms.find((candidate) => candidate.id === booking?.roomId);
         const result = validateCheckIn(booking, room, staff, new Date());
@@ -116,6 +157,7 @@ export const useBookingStore = create<BookingState>()(
       markNoShow: (bookingId) => {
         const staff = currentUser(get().session);
         if (!staff || !can(staff.role, 'checkin.verify')) return { ok: false, reason: 'forbidden' };
+        if (isInactive(staff)) return { ok: false, reason: 'inactive' };
         const booking = get().bookings.find((item) => item.id === bookingId);
         if (!booking) return { ok: false, reason: 'not_found' };
         if (booking.status !== 'confirmed') {

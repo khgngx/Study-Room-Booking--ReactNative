@@ -9,50 +9,52 @@ export const DEFAULT_POLICY: Policy = {
     { start: '13:00', end: '21:00' },
   ],
   slotMinutes: 120,
-  maxBookingsPerDay: 2,
+  maxBookingsPerDay: 4,
   reminderMinutes: 15,
 };
 
-type RoomRow = [name: string, type: RoomType, building: Building, floor: number, capacity: number, equipment: Equipment[]];
+type RoomRow = [code: string, name: string, type: RoomType, building: Building, floor: number, capacity: number, equipment: Equipment[], description: string];
 
 const ROOM_ROWS: RoomRow[] = [
-  ['A101', 'study', 'A', 1, 4, ['whiteboard', 'ac']],
-  ['A102', 'study', 'A', 1, 6, ['whiteboard']],
-  ['A203', 'study', 'A', 2, 8, ['projector', 'whiteboard', 'ac']],
-  ['A305', 'study', 'A', 3, 12, ['projector', 'ac']],
-  ['Lab A401', 'lab', 'A', 4, 20, ['projector', 'high_spec_pc', 'ac']],
-  ['B101', 'study', 'B', 1, 2, ['whiteboard']],
-  ['B104', 'study', 'B', 1, 4, ['whiteboard', 'ac']],
-  ['B202', 'study', 'B', 2, 10, ['projector', 'whiteboard']],
-  ['Lab B301', 'lab', 'B', 3, 20, ['high_spec_pc', 'ac']],
-  ['Lab B302', 'lab', 'B', 3, 16, ['projector', 'high_spec_pc', 'ac']],
-  ['C101', 'study', 'C', 1, 6, ['whiteboard', 'ac']],
-  ['C102', 'study', 'C', 1, 8, ['projector', 'whiteboard']],
-  ['C204', 'study', 'C', 2, 12, ['projector', 'whiteboard', 'ac']],
-  ['Lab C301', 'lab', 'C', 3, 18, ['high_spec_pc', 'ac']],
-  ['C402', 'study', 'C', 4, 4, ['whiteboard']],
-  ['V101', 'study', 'V', 1, 6, ['whiteboard', 'ac']],
-  ['V202', 'study', 'V', 2, 10, ['projector', 'whiteboard', 'ac']],
-  ['Lab V301', 'lab', 'V', 3, 20, ['projector', 'high_spec_pc', 'ac']],
-  ['Lab V302', 'lab', 'V', 3, 14, ['high_spec_pc', 'ac']],
-  ['V405', 'study', 'V', 4, 2, ['whiteboard']],
+  ['A-101', 'Phòng học nhóm 1', 'study', 'A', 1, 4, ['whiteboard', 'ac'], 'Bàn chung 4 chỗ, bảng trắng treo tường. Hợp nhóm nhỏ ôn bài hoặc chia việc đồ án.'],
+  ['A-102', 'Phòng học nhóm 2', 'study', 'A', 1, 6, ['whiteboard'], 'Bàn dài 6 chỗ và bảng trắng lớn, hợp thảo luận và giải bài tập nhóm. Phòng không có điều hoà.'],
+  ['A-203', 'Phòng học nhóm 3', 'study', 'A', 2, 8, ['projector', 'whiteboard', 'ac'], 'Bàn chữ U 8 chỗ, có máy chiếu và bảng trắng để tập thuyết trình trước buổi báo cáo.'],
+  ['A-305', 'Phòng hội thảo A', 'seminar', 'A', 3, 12, ['projector', 'ac'], 'Phòng hội thảo 12 chỗ với máy chiếu và màn chiếu lớn. Dành cho seminar, bảo vệ thử và họp câu lạc bộ.'],
+  ['A-401', 'Lab Lập trình ứng dụng', 'lab', 'A', 4, 20, ['projector', 'high_spec_pc', 'ac'], 'Lab 20 máy cấu hình cao cài sẵn Android Studio và VS Code, có máy chiếu cho buổi hướng dẫn.'],
+  ['B-101', 'Phòng tự học đôi 1', 'study', 'B', 1, 2, ['whiteboard'], 'Phòng nhỏ 2 chỗ, bảng trắng mini. Hợp học đôi hoặc phỏng vấn thử.'],
+  ['B-104', 'Phòng học nhóm 4', 'study', 'B', 1, 4, ['whiteboard', 'ac'], 'Bàn tròn 4 chỗ, bảng trắng, điều hoà. Yên tĩnh vì nằm cuối hành lang tầng 1.'],
+  ['B-202', 'Phòng hội thảo B', 'seminar', 'B', 2, 10, ['projector', 'whiteboard'], 'Phòng hội thảo 10 chỗ có máy chiếu và bảng trắng. Hợp báo cáo tiến độ và sinh hoạt chuyên đề.'],
+  ['B-301', 'Lab IoT và hệ thống nhúng', 'lab', 'B', 3, 20, ['high_spec_pc', 'ac'], 'Lab 20 chỗ với máy trạm và bàn thực hành cho mạch, cảm biến, vi điều khiển. Nhóm tự mang kit.'],
+  ['B-302', 'Lab Mac và iOS', 'lab', 'B', 3, 16, ['projector', 'high_spec_pc', 'ac'], 'Lab 16 máy Mac cài Xcode để build và chạy thử ứng dụng iOS, có máy chiếu.'],
+  ['C-101', 'Phòng học nhóm 5', 'study', 'C', 1, 6, ['whiteboard', 'ac'], 'Bàn chung 6 chỗ, bảng trắng, điều hoà. Gần sảnh toà C nên dễ hẹn nhóm.'],
+  ['C-102', 'Phòng học nhóm 6', 'study', 'C', 1, 8, ['projector', 'whiteboard'], 'Phòng 8 chỗ có máy chiếu và bảng trắng, hợp tập thuyết trình. Phòng không có điều hoà.'],
+  ['C-204', 'Phòng hội thảo C', 'seminar', 'C', 2, 12, ['projector', 'whiteboard', 'ac'], 'Phòng hội thảo 12 chỗ đủ máy chiếu, bảng trắng và điều hoà cho workshop hoặc bảo vệ thử.'],
+  ['C-301', 'Lab Mạng máy tính', 'lab', 'C', 3, 18, ['high_spec_pc', 'ac'], 'Lab 18 máy kèm switch và router thực hành để cấu hình, đo kiểm mạng.'],
+  ['C-402', 'Phòng tự học yên tĩnh', 'study', 'C', 4, 4, ['whiteboard'], 'Phòng 4 chỗ dành cho tự học yên tĩnh: không thảo luận lớn tiếng, không họp nhóm.'],
+  ['V-101', 'Phòng học nhóm 7', 'study', 'V', 1, 6, ['whiteboard', 'ac'], 'Bàn chung 6 chỗ, bảng trắng, điều hoà. Ngay tầng 1 toà V, tiện ghé giữa hai tiết học.'],
+  ['V-202', 'Phòng hội thảo V', 'seminar', 'V', 2, 10, ['projector', 'whiteboard', 'ac'], 'Phòng hội thảo 10 chỗ có máy chiếu, bảng trắng và điều hoà. Hợp họp đồ án với giảng viên hướng dẫn.'],
+  ['V-301', 'Lab Trí tuệ nhân tạo', 'lab', 'V', 3, 20, ['projector', 'high_spec_pc', 'ac'], 'Lab 20 máy có GPU để huấn luyện và chạy thử mô hình, kèm máy chiếu cho buổi seminar.'],
+  ['V-302', 'Lab Đồ hoạ và đa phương tiện', 'lab', 'V', 3, 14, ['high_spec_pc', 'ac'], 'Lab 14 máy màn hình lớn, cài sẵn phần mềm thiết kế và dựng phim.'],
+  ['V-405', 'Phòng tự học đôi 2', 'study', 'V', 4, 2, ['whiteboard'], 'Phòng nhỏ 2 chỗ ở tầng 4, bảng trắng mini. Hợp học đôi hoặc gọi video.'],
 ];
 
 // Placeholder photography until real campus photos are available.
 export const placeholderImage = (seed: string) =>
   `https://picsum.photos/seed/vku-${encodeURIComponent(seed)}/800/800`;
 
-export const SEED_ROOMS: Room[] = ROOM_ROWS.map(([name, type, building, floor, capacity, equipment], index) => ({
+export const SEED_ROOMS: Room[] = ROOM_ROWS.map(([code, name, type, building, floor, capacity, equipment, description], index) => ({
   id: `room-${index + 1}`,
+  code,
   name,
   type,
   building,
   floor,
   capacity,
   equipment,
-  imageUrl: placeholderImage(name),
-  underMaintenance: name === 'C402',
-  maintenanceNote: name === 'C402' ? 'Đang sửa điều hoà' : undefined,
+  description,
+  imageUrl: placeholderImage(code),
+  underMaintenance: code === 'C-402',
+  maintenanceNote: code === 'C-402' ? 'Đang sửa điều hoà' : undefined,
 }));
 
 // MOCK AUTH: demo credentials stored in plain text on-device. Not suitable for a real deployment.

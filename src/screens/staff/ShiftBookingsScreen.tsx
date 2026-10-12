@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useMemo, useState } from 'react';
-import { Alert, FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
@@ -13,13 +13,15 @@ import { can } from '../../domain/permissions';
 import { formatRange, nextDateKeys, toDateKey } from '../../domain/time';
 import { useNow } from '../../hooks/useNow';
 import type { ShiftStackParams } from '../../navigation/types';
+import { useCanAct } from '../../hooks/usePresence';
+import { showMessage } from '../../services/dialog';
 import { useAccountStore } from '../../store/useAccountStore';
 import { useBookingStore, useCurrentUser, type StaffActionResult } from '../../store/useBookingStore';
 import { useRoomStore } from '../../store/useRoomStore';
 import { colors, spacing } from '../../theme/tokens';
 
 function report(result: StaffActionResult) {
-  if (!result.ok) Alert.alert('Không thực hiện được', STAFF_ACTION_ERROR[result.reason]);
+  if (!result.ok) showMessage('Không thực hiện được', STAFF_ACTION_ERROR[result.reason]);
 }
 
 export function ShiftBookingsScreen({ navigation }: NativeStackScreenProps<ShiftStackParams, 'ShiftBookings'>) {
@@ -30,6 +32,7 @@ export function ShiftBookingsScreen({ navigation }: NativeStackScreenProps<Shift
   const rooms = useRoomStore((state) => state.rooms);
   const users = useAccountStore((state) => state.users);
   const now = useNow();
+  const canAct = useCanAct();
 
   const dateKeys = useMemo(() => nextDateKeys(now, 7), [now]);
   const today = toDateKey(now);
@@ -46,7 +49,7 @@ export function ShiftBookingsScreen({ navigation }: NativeStackScreenProps<Shift
         student: users.find((user) => user.id === booking.userId),
       }))
       .filter(({ room }) => room !== undefined && canVerifyInBuilding(staff, room))
-      .sort((a, b) => a.booking.startMinutes - b.booking.startMinutes || (a.room?.name ?? '').localeCompare(b.room?.name ?? ''));
+      .sort((a, b) => a.booking.startMinutes - b.booking.startMinutes || (a.room?.code ?? '').localeCompare(b.room?.code ?? ''));
   }, [bookings, rooms, users, staff, dateKey]);
 
   if (!staff) return null;
@@ -58,7 +61,7 @@ export function ShiftBookingsScreen({ navigation }: NativeStackScreenProps<Shift
     <Screen
       title="Ca trực"
       subtitle={area}
-      action={<Button label="Quét QR" variant="pill" onPress={() => navigation.navigate('Scan')} />}
+      action={<Button label="Quét QR" variant="pill" onPress={() => navigation.navigate('Scan')} disabled={!canAct} />}
     >
       <View style={styles.dates}>
         <DateStrip dateKeys={dateKeys} selected={dateKey} onSelect={setPickedDate} />
@@ -75,18 +78,18 @@ export function ShiftBookingsScreen({ navigation }: NativeStackScreenProps<Shift
           <View style={styles.row}>
             <View style={styles.rowHeader}>
               <AppText variant="titleMd" style={styles.grow}>
-                {formatRange(booking.startMinutes, booking.endMinutes)} · {room?.name}
+                {formatRange(booking.startMinutes, booking.endMinutes)} · {room?.code}
               </AppText>
               <PillBadge label={BOOKING_STATUS_LABEL[booking.status]} />
             </View>
             <AppText variant="bodySm" color="muted">
-              {student?.name ?? 'Tài khoản đã xoá'}
+              {room?.name} · {student?.name ?? 'Tài khoản đã xoá'}
               {student?.studentId ? ` · ${student.studentId}` : ''} · Mã {booking.code}
             </AppText>
             {booking.status === 'confirmed' && dateKey === today ? (
               <View style={styles.actions}>
-                <Button label="Check-in" variant="secondary" onPress={() => report(checkIn(booking.id))} style={styles.grow} />
-                <Button label="Vắng mặt" variant="tertiary" onPress={() => report(markNoShow(booking.id))} />
+                <Button label="Check-in" variant="secondary" onPress={() => report(checkIn(booking.id))} disabled={!canAct} style={styles.grow} />
+                <Button label="Vắng mặt" variant="tertiary" onPress={() => report(markNoShow(booking.id))} disabled={!canAct} />
               </View>
             ) : null}
           </View>

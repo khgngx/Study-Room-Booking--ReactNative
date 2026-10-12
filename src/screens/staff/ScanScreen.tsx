@@ -102,7 +102,7 @@ export function ScanScreen() {
             {lookup.booking ? (
               <>
                 <AppText color="body">
-                  {lookup.room?.name ?? 'Phòng đã bị xoá'} · {formatDateKey(lookup.booking.dateKey)} ·{' '}
+                  {lookup.room?.code ?? 'Phòng đã bị xoá'} · {formatDateKey(lookup.booking.dateKey)} ·{' '}
                   {formatRange(lookup.booking.startMinutes, lookup.booking.endMinutes)}
                 </AppText>
                 <AppText variant="bodySm" color="muted">

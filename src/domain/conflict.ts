@@ -1,4 +1,4 @@
-import { dateFromKey } from './time';
+import { dateFromKey, parseTime } from './time';
 import type { Booking, Policy, Room, Slot } from './types';
 
 export type SlotAvailability =
@@ -15,17 +15,19 @@ export function isActive(booking: Booking): boolean {
   return booking.status !== 'cancelled';
 }
 
-export function overlaps(
-  a: Pick<Booking, 'startMinutes' | 'endMinutes'>,
-  b: Pick<Slot, 'startMinutes' | 'endMinutes'>,
-): boolean {
+/** Any stretch of one day, in minutes from midnight: a generated slot or a time the student typed in. */
+export type MinuteRange = Pick<Slot, 'startMinutes' | 'endMinutes'>;
+
+export function overlaps(a: MinuteRange, b: MinuteRange): boolean {
   return a.startMinutes < b.endMinutes && b.startMinutes < a.endMinutes;
 }
+
+export const sameRange = (a: MinuteRange, b: MinuteRange) => a.startMinutes === b.startMinutes && a.endMinutes === b.endMinutes;
 
 interface AvailabilityInput {
   room: Room;
   dateKey: string;
-  slot: Slot;
+  slot: MinuteRange;
   bookings: readonly Booking[];
   userId: string;
   policy: Pick<Policy, 'maxBookingsPerDay'>;
@@ -49,4 +51,33 @@ export function getSlotAvailability(input: AvailabilityInput): SlotAvailability 
   if (ownSameDay.some((booking) => overlaps(booking, slot))) return 'user_overlap';
   if (ownSameDay.length >= policy.maxBookingsPerDay) return 'daily_limit';
   return 'available';
+}
+
+/** How many more bookings `userId` may still make on `dateKey` before reaching the daily limit. */
+export function countRemainingBookings(input: Pick<AvailabilityInput, 'dateKey' | 'bookings' | 'userId' | 'policy'>): number {
+  const { dateKey, bookings, userId, policy } = input;
+  const held = bookings.filter((booking) => booking.userId === userId && booking.dateKey === dateKey && isActive(booking)).length;
+  return Math.max(0, policy.maxBookingsPerDay - held);
+}
+
+/** Shortest stretch worth holding a room for. */
+export const MIN_BOOKING_MINUTES = 15;
+
+export type RangeRejection = 'too_short' | 'too_long' | 'outside_hours';
+
+/**
+ * Shape rules every booking obeys, whichever way its time was picked: it sits inside one opening
+ * window and runs no longer than a slot. Generated slots pass by construction; custom times must too.
+ */
+export function validateBookingRange(
+  range: MinuteRange,
+  policy: Pick<Policy, 'openingWindows' | 'slotMinutes'>,
+): RangeRejection | null {
+  const duration = range.endMinutes - range.startMinutes;
+  if (!Number.isInteger(duration) || duration < MIN_BOOKING_MINUTES) return 'too_short';
+  if (duration > policy.slotMinutes) return 'too_long';
+  const inOneWindow = policy.openingWindows.some(
+    (window) => range.startMinutes >= parseTime(window.start) && range.endMinutes <= parseTime(window.end),
+  );
+  return inOneWindow ? null : 'outside_hours';
 }

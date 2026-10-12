@@ -1,5 +1,5 @@
 import { encodeBookingQr, parseBookingQr, validateCheckIn } from '../checkin';
-import { can } from '../permissions';
+import { can, canAct, getPresence, receivesNotifications } from '../permissions';
 import { computeStats } from '../stats';
 import { makeBooking, makeRoom } from './fixtures';
 
@@ -67,6 +67,29 @@ describe('permission matrix', () => {
     expect(can('lab_staff', 'room.crud')).toBe(false);
     expect(can('lab_staff', 'booking.viewAllAreas')).toBe(false);
     expect(can('facility_manager', 'policy.edit')).toBe(true);
+  });
+});
+
+describe('presence', () => {
+  it('defaults accounts without a saved presence to online', () => {
+    expect(getPresence({})).toBe('online');
+  });
+
+  it('keeps every role permission while online or busy, and removes all of them while inactive', () => {
+    expect(canAct({ role: 'student', presence: 'online' }, 'booking.create')).toBe(true);
+    expect(canAct({ role: 'student', presence: 'busy' }, 'booking.create')).toBe(true);
+    expect(canAct({ role: 'student', presence: 'inactive' }, 'booking.create')).toBe(false);
+    expect(canAct({ role: 'facility_manager', presence: 'inactive' }, 'room.crud')).toBe(false);
+  });
+
+  it('never grants a permission the role does not have', () => {
+    expect(canAct({ role: 'lab_staff', presence: 'online' }, 'room.crud')).toBe(false);
+  });
+
+  it('delivers notifications only while online', () => {
+    expect(receivesNotifications({ presence: 'online' })).toBe(true);
+    expect(receivesNotifications({ presence: 'busy' })).toBe(false);
+    expect(receivesNotifications({ presence: 'inactive' })).toBe(false);
   });
 });
 

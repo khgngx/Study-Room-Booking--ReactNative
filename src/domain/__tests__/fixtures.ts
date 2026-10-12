@@ -13,7 +13,8 @@ export const policy: Policy = {
 export function makeRoom(overrides: Partial<Room> = {}): Room {
   return {
     id: 'room-1',
-    name: 'A101',
+    code: 'A-101',
+    name: 'Phòng học nhóm 1',
     type: 'study',
     building: 'A',
     floor: 1,

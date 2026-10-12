@@ -11,19 +11,24 @@ interface ChipProps {
   onPress: () => void;
   icon?: keyof typeof Ionicons.glyphMap;
   disabled?: boolean;
+  /** Fills green when selected; for on/off toggles rather than a choice among options. */
+  toggle?: boolean;
 }
 
-export const Chip = memo(function Chip({ label, selected, onPress, icon, disabled = false }: ChipProps) {
+export const Chip = memo(function Chip({ label, selected, onPress, icon, disabled = false, toggle = false }: ChipProps) {
+  const on = toggle && selected;
   return (
     <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected, disabled }}
+      accessibilityState={toggle ? { checked: selected, disabled } : { selected, disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={[styles.chip, selected && styles.selected, disabled && styles.disabled]}
+      accessibilityRole={toggle ? 'switch' : 'button'}
+      style={[styles.chip, selected && (on ? styles.toggledOn : styles.selected), disabled && styles.disabled]}
     >
-      {icon ? <Ionicons name={icon} size={16} color={colors.ink} /> : null}
-      <AppText variant="buttonSm">{label}</AppText>
+      {icon ? <Ionicons name={icon} size={16} color={on ? colors.onPrimary : colors.ink} /> : null}
+      <AppText variant="buttonSm" color={on ? 'onPrimary' : 'ink'}>
+        {label}
+      </AppText>
     </Pressable>
   );
 });
@@ -41,5 +46,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.canvas,
   },
   selected: { borderColor: colors.ink, backgroundColor: colors.surfaceSoft },
+  toggledOn: { borderColor: colors.successInk, backgroundColor: colors.successInk },
   disabled: { opacity: 0.4 },
 });

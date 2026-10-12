@@ -5,6 +5,7 @@ import { Chip } from '../../components/Chip';
 import { ROLE_LABEL } from '../../components/labels';
 import { Screen, screenStyles } from '../../components/Layout';
 import { BUILDINGS, type UserRole } from '../../domain/types';
+import { useCanAct } from '../../hooks/usePresence';
 import { useAccountStore } from '../../store/useAccountStore';
 import { useBookingStore } from '../../store/useBookingStore';
 import { colors, spacing } from '../../theme/tokens';
@@ -16,9 +17,10 @@ export function UsersScreen() {
   const setRole = useAccountStore((state) => state.setRole);
   const setAssignedBuildings = useAccountStore((state) => state.setAssignedBuildings);
   const ownId = useBookingStore((state) => state.session?.userId);
+  const canAct = useCanAct();
 
   return (
-    <Screen title="Tài khoản" subtitle={`${users.length} tài khoản`}>
+    <Screen nested title="Tài khoản" subtitle={`${users.length} tài khoản`}>
       <FlatList
         data={users}
         keyExtractor={(user) => user.id}
@@ -40,7 +42,7 @@ export function UsersScreen() {
               <View style={styles.chips}>
                 {ROLES.map((role) => (
                   // Changing your own role would lock you out of this screen.
-                  <Chip key={role} label={ROLE_LABEL[role]} selected={user.role === role} disabled={isSelf} onPress={() => setRole(user.id, role)} />
+                  <Chip key={role} label={ROLE_LABEL[role]} selected={user.role === role} disabled={isSelf || !canAct} onPress={() => setRole(user.id, role)} />
                 ))}
               </View>
               {user.role === 'lab_staff' ? (
@@ -54,6 +56,7 @@ export function UsersScreen() {
                         key={building}
                         label={`Toà ${building}`}
                         selected={assigned.includes(building)}
+                        disabled={!canAct}
                         onPress={() =>
                           setAssignedBuildings(
                             user.id,

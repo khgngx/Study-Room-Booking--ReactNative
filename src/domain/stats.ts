@@ -35,7 +35,7 @@ export function computeStats({ bookings, rooms, dateKeys, bookableMinutesPerDay 
   const topRooms = rooms
     .map((room) => ({ room, count: counts.get(room.id) ?? 0 }))
     .filter((entry) => entry.count > 0)
-    .sort((a, b) => b.count - a.count || a.room.name.localeCompare(b.room.name))
+    .sort((a, b) => b.count - a.count || a.room.code.localeCompare(b.room.code))
     .slice(0, 5);
 
   return {

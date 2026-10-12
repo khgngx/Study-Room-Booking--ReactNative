@@ -5,12 +5,13 @@ import { FlatList, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
-import { ROOM_STATUS_LABEL } from '../../components/labels';
+import { formatLocation, ROOM_STATUS_LABEL } from '../../components/labels';
 import { EmptyState, Screen, screenStyles } from '../../components/Layout';
 import { can } from '../../domain/permissions';
 import { getRoomStatus } from '../../domain/roomStatus';
 import { useNow } from '../../hooks/useNow';
 import type { RoomAdminStackParams } from '../../navigation/types';
+import { useCanAct } from '../../hooks/usePresence';
 import { useBookingStore, useCurrentUser } from '../../store/useBookingStore';
 import { useRoomStore } from '../../store/useRoomStore';
 import { colors, radius, spacing } from '../../theme/tokens';
@@ -22,9 +23,11 @@ export function ManageRoomsScreen({ navigation }: NativeStackScreenProps<RoomAdm
   const setMaintenance = useRoomStore((state) => state.setMaintenance);
   const bookings = useBookingStore((state) => state.bookings);
   const now = useNow();
-  const sorted = useMemo(() => [...rooms].sort((a, b) => a.building.localeCompare(b.building) || a.floor - b.floor || a.name.localeCompare(b.name)), [rooms]);
+  const active = useCanAct();
+  const sorted = useMemo(() => [...rooms].sort((a, b) => a.building.localeCompare(b.building) || a.floor - b.floor || a.code.localeCompare(b.code)), [rooms]);
 
   if (!user) return null;
+  // Role decides which controls exist; presence decides whether they respond.
   const canEdit = can(user.role, 'room.crud');
   const canToggle = can(user.role, 'room.setMaintenance');
 
@@ -32,7 +35,7 @@ export function ManageRoomsScreen({ navigation }: NativeStackScreenProps<RoomAdm
     <Screen
       title="Phòng"
       subtitle={`${rooms.length} phòng`}
-      action={canEdit ? <Button label="Thêm phòng" variant="pill" onPress={() => navigation.navigate('RoomForm', {})} /> : undefined}
+      action={canEdit ? <Button label="Thêm phòng" variant="pill" onPress={() => navigation.navigate('RoomForm', {})} disabled={!active} /> : undefined}
     >
       <FlatList
         data={sorted}
@@ -44,16 +47,18 @@ export function ManageRoomsScreen({ navigation }: NativeStackScreenProps<RoomAdm
           <View style={styles.row}>
             <Pressable
               accessibilityRole={canEdit ? 'button' : undefined}
-              accessibilityLabel={canEdit ? `Sửa phòng ${room.name}` : undefined}
-              disabled={!canEdit}
+              accessibilityLabel={canEdit ? `Sửa phòng ${room.code}` : undefined}
+              disabled={!canEdit || !active}
               onPress={() => navigation.navigate('RoomForm', { roomId: room.id })}
               style={styles.info}
             >
               <Image source={room.imageUrl} style={styles.thumb} contentFit="cover" />
               <View style={styles.text}>
-                <AppText variant="titleMd">{room.name}</AppText>
+                <AppText variant="titleMd" numberOfLines={1}>
+                  {room.code} · {room.name}
+                </AppText>
                 <AppText variant="bodySm" color="muted" numberOfLines={1}>
-                  Toà {room.building} · Tầng {room.floor} · {room.capacity} chỗ
+                  {formatLocation(room)} · {room.capacity} chỗ
                 </AppText>
                 <AppText variant="bodySm" color="muted" numberOfLines={1}>
                   {ROOM_STATUS_LABEL[getRoomStatus(room, bookings, now)]}
@@ -67,8 +72,9 @@ export function ManageRoomsScreen({ navigation }: NativeStackScreenProps<RoomAdm
                   Bảo trì
                 </AppText>
                 <Switch
-                  accessibilityLabel={`Bảo trì phòng ${room.name}`}
+                  accessibilityLabel={`Bảo trì phòng ${room.code}`}
                   value={room.underMaintenance}
+                  disabled={!active}
                   onValueChange={(value) => setMaintenance(room.id, value, room.maintenanceNote)}
                   trackColor={{ true: colors.ink, false: colors.hairline }}
                   thumbColor={colors.canvas}

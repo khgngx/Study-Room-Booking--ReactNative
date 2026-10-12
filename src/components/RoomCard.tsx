@@ -1,72 +1,104 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { memo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import type { DaySegments, TimeRange } from '../domain/timeline';
 import type { Room, RoomStatus } from '../domain/types';
-import { colors, radius, spacing } from '../theme/tokens';
+import { colors, radius, spacing, type ColorToken } from '../theme/tokens';
 import { AppText } from './AppText';
-import { EQUIPMENT_LABEL, ROOM_TYPE_LABEL } from './labels';
-import { PillBadge, RoomStatusBadge } from './StatusBadge';
-
-const META_HEIGHT = 76;
-const MAX_CARD_WIDTH = 520;
-
-export function getRoomCardWidth(windowWidth: number): number {
-  return Math.min(windowWidth, MAX_CARD_WIDTH) - spacing.lg * 2;
-}
+import { formatLocation } from './labels';
+import { RoomCodePlate } from './RoomCodePlate';
+import { RoomTimeline } from './RoomTimeline';
 
 /** Fixed row height so the FlatList can skip measuring (getItemLayout). */
-export function getRoomCardHeight(windowWidth: number): number {
-  return getRoomCardWidth(windowWidth) + META_HEIGHT + spacing.lg;
-}
+export const ROOM_CARD_ROW_HEIGHT = 132;
+/** Distance from the screen edge to the timeline bar, so the axis above can line up with it. */
+export const ROOM_CARD_TIMELINE_INSET = spacing.lg + spacing.base + 1;
+
+/** Text colour per tone; darker than the dot so small labels stay readable on white. */
+export const ROOM_TONE_COLOR: Record<RoomStatus, ColorToken> = {
+  available: 'successInk',
+  occupied: 'primaryActive',
+  maintenance: 'muted',
+};
+
+export const ROOM_TONE_DOT: Record<RoomStatus, ColorToken> = {
+  available: 'success',
+  occupied: 'primary',
+  maintenance: 'mutedSoft',
+};
 
 interface RoomCardProps {
   room: Room;
-  status: RoomStatus;
-  width: number;
+  /** Drives the status colour: free, taken, or out of service for the day being viewed. */
+  tone: RoomStatus;
+  statusLabel: string;
+  range: TimeRange;
+  segments: DaySegments;
+  nowMinutes: number | null;
+  /** Rows stack into one bordered group; the outer two carry its rounded corners. */
+  isFirst: boolean;
+  isLast: boolean;
   onPress: (roomId: string) => void;
 }
 
-/** `property-card`: 1:1 photo with floating badges, then a compact meta block. */
-export const RoomCard = memo(function RoomCard({ room, status, width, onPress }: RoomCardProps) {
+/** One row of the room list: door code and identity on top, availability and the day's timeline below. */
+export const RoomCard = memo(function RoomCard({ room, tone, statusLabel, range, segments, nowMinutes, isFirst, isLast, onPress }: RoomCardProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Phòng ${room.name}, toà ${room.building}, ${room.capacity} chỗ`}
+      accessibilityLabel={`${room.code}, ${room.name}, ${formatLocation(room)}, ${room.capacity} chỗ, ${statusLabel}`}
       onPress={() => onPress(room.id)}
-      style={[styles.card, { width }]}
+      style={({ pressed }) => [styles.row, isFirst && styles.first, isLast && styles.last, pressed && styles.pressed]}
     >
-      <View style={[styles.photo, { width, height: width }]}>
-        <Image source={room.imageUrl} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} recyclingKey={room.id} />
-        <RoomStatusBadge status={status} floating style={styles.statusBadge} />
-        <PillBadge label={`${room.capacity} chỗ`} floating style={styles.capacityBadge} />
-      </View>
-      <View style={styles.meta}>
-        <View style={styles.titleRow}>
-          <AppText variant="titleMd" numberOfLines={1} style={styles.title}>
+      <View style={styles.top}>
+        <RoomCodePlate code={room.code} />
+        <View style={styles.text}>
+          <AppText variant="titleMd" numberOfLines={1}>
             {room.name}
           </AppText>
-          <Ionicons name="people-outline" size={14} color={colors.ink} />
-          <AppText variant="bodySm">{room.capacity}</AppText>
+          <View style={styles.meta}>
+            <AppText variant="bodySm" color="muted" numberOfLines={1} style={styles.shrink}>
+              {formatLocation(room)}
+            </AppText>
+            <Ionicons name="people-outline" size={14} color={colors.muted} />
+            <AppText variant="bodySm" color="muted">
+              {room.capacity}
+            </AppText>
+          </View>
         </View>
-        <AppText variant="bodySm" color="muted" numberOfLines={1}>
-          Toà {room.building} · Tầng {room.floor} · {ROOM_TYPE_LABEL[room.type]}
-        </AppText>
-        <AppText variant="bodySm" color="muted" numberOfLines={1}>
-          {room.equipment.map((item) => EQUIPMENT_LABEL[item]).join(' · ') || 'Không có thiết bị'}
+      </View>
+      <View style={styles.statusRow}>
+        <View style={[styles.dot, { backgroundColor: colors[ROOM_TONE_DOT[tone]] }]} />
+        <AppText variant="caption" color={ROOM_TONE_COLOR[tone]} numberOfLines={1} style={styles.shrink}>
+          {statusLabel}
         </AppText>
       </View>
+      <RoomTimeline range={range} segments={segments} nowMinutes={nowMinutes} />
     </Pressable>
   );
 });
 
 const styles = StyleSheet.create({
-  card: { alignSelf: 'center', marginBottom: spacing.lg },
-  photo: { borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surfaceStrong },
-  statusBadge: { position: 'absolute', top: spacing.md, left: spacing.md },
-  capacityBadge: { position: 'absolute', top: spacing.md, right: spacing.md },
-  meta: { height: META_HEIGHT, paddingTop: spacing.md, gap: spacing.xxs },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  title: { flex: 1 },
+  row: {
+    height: ROOM_CARD_ROW_HEIGHT,
+    marginHorizontal: spacing.lg,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    justifyContent: 'space-between',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: colors.hairline,
+    backgroundColor: colors.canvas,
+  },
+  first: { borderTopWidth: 1, borderTopLeftRadius: radius.md, borderTopRightRadius: radius.md },
+  last: { borderBottomLeftRadius: radius.md, borderBottomRightRadius: radius.md },
+  pressed: { backgroundColor: colors.surfaceSoft },
+  top: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  text: { flex: 1, gap: spacing.xxs },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  shrink: { flexShrink: 1 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  dot: { width: 8, height: 8, borderRadius: radius.full },
 });

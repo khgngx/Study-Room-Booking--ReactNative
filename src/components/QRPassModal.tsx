@@ -31,7 +31,9 @@ export function QRPassModal({ booking, room, onClose }: QRPassModalProps) {
           <View style={styles.qr}>
             <QRCode value={encodeBookingQr(booking)} size={200} color={colors.ink} backgroundColor={colors.canvas} />
           </View>
-          <AppText variant="displaySm">{room?.name ?? 'Phòng đã bị xoá'}</AppText>
+          <AppText variant="displaySm" style={styles.subtitle}>
+            {room ? `${room.code} · ${room.name}` : 'Phòng đã bị xoá'}
+          </AppText>
           <AppText variant="bodyMd" color="body">
             {formatDateKey(booking.dateKey)} · {formatRange(booking.startMinutes, booking.endMinutes)}
           </AppText>

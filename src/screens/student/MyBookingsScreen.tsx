@@ -1,15 +1,17 @@
 import { useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
-import { BOOKING_STATUS_LABEL } from '../../components/labels';
+import { BOOKING_STATUS_LABEL, formatLocation } from '../../components/labels';
 import { EmptyState, Screen, screenStyles } from '../../components/Layout';
 import { QRPassModal } from '../../components/QRPassModal';
 import { PillBadge } from '../../components/StatusBadge';
 import { dateFromKey, formatDateKey, formatRange } from '../../domain/time';
 import type { Booking } from '../../domain/types';
 import { useNow } from '../../hooks/useNow';
+import { useCanAct } from '../../hooks/usePresence';
+import { confirmDestructive } from '../../services/dialog';
 import { useBookingStore } from '../../store/useBookingStore';
 import { useRoomStore } from '../../store/useRoomStore';
 import { colors, radius, spacing } from '../../theme/tokens';
@@ -26,6 +28,7 @@ export function MyBookingsScreen() {
   const cancelBooking = useBookingStore((state) => state.cancelBooking);
   const rooms = useRoomStore((state) => state.rooms);
   const now = useNow();
+  const canAct = useCanAct();
   const [tab, setTab] = useState<Tab>('upcoming');
   const [pass, setPass] = useState<Booking | null>(null);
 
@@ -43,14 +46,17 @@ export function MyBookingsScreen() {
   }, [bookings, userId, now]);
 
   const confirmCancel = (booking: Booking) => {
-    Alert.alert('Huỷ đặt phòng?', 'Khung giờ sẽ được mở lại cho người khác.', [
-      { text: 'Giữ lại', style: 'cancel' },
-      { text: 'Huỷ đặt phòng', style: 'destructive', onPress: () => void cancelBooking(booking.id) },
-    ]);
+    confirmDestructive({
+      title: 'Huỷ đặt phòng?',
+      message: 'Khung giờ sẽ được mở lại cho người khác.',
+      confirmLabel: 'Huỷ đặt phòng',
+      cancelLabel: 'Giữ lại',
+      onConfirm: () => void cancelBooking(booking.id),
+    });
   };
 
   return (
-    <Screen title="Đặt chỗ của tôi">
+    <Screen title="Lịch của tôi">
       <View style={styles.tabs}>
         {TABS.map(({ key, label }) => (
           <Pressable
@@ -74,7 +80,7 @@ export function MyBookingsScreen() {
           <EmptyState
             icon="calendar-outline"
             title={tab === 'upcoming' ? 'Chưa có lượt đặt nào' : 'Chưa có lịch sử'}
-            message={tab === 'upcoming' ? 'Vào mục Khám phá để chọn phòng và khung giờ.' : 'Các lượt đặt đã qua sẽ hiện ở đây.'}
+            message={tab === 'upcoming' ? 'Vào mục Phòng để chọn phòng và khung giờ.' : 'Các lượt đặt đã qua sẽ hiện ở đây.'}
           />
         }
         renderItem={({ item }) => {
@@ -82,8 +88,8 @@ export function MyBookingsScreen() {
           return (
             <View style={styles.card}>
               <View style={styles.cardHeader}>
-                <AppText variant="displaySm" style={styles.cardTitle}>
-                  {room?.name ?? 'Phòng đã bị xoá'}
+                <AppText variant="displaySm" numberOfLines={2} style={styles.cardTitle}>
+                  {room ? `${room.code} · ${room.name}` : 'Phòng đã bị xoá'}
                 </AppText>
                 <PillBadge label={BOOKING_STATUS_LABEL[item.status]} />
               </View>
@@ -92,14 +98,14 @@ export function MyBookingsScreen() {
               </AppText>
               {room ? (
                 <AppText variant="bodySm" color="muted">
-                  Toà {room.building} · Tầng {room.floor}
+                  {formatLocation(room)}
                 </AppText>
               ) : null}
               {tab === 'upcoming' ? (
                 <View style={styles.actions}>
                   <Button label="Xem mã QR" variant="secondary" onPress={() => setPass(item)} style={styles.grow} />
                   {item.status === 'confirmed' ? (
-                    <Button label="Huỷ" variant="tertiary" onPress={() => confirmCancel(item)} />
+                    <Button label="Huỷ" variant="tertiary" onPress={() => confirmCancel(item)} disabled={!canAct} />
                   ) : null}
                 </View>
               ) : null}

@@ -10,29 +10,29 @@ interface DateStripProps {
   onSelect: (dateKey: string) => void;
 }
 
-/** Row of `date-picker-day` cells: 40px circles, ink fill when selected. */
+/** A week of day tiles spread across the screen: ink fill when selected, a dot under today. */
 export function DateStrip({ dateKeys, selected, onSelect }: DateStripProps) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.strip} contentContainerStyle={styles.row}>
       {dateKeys.map((dateKey, index) => {
         const isSelected = dateKey === selected;
+        const isToday = index === 0;
         return (
           <Pressable
             key={dateKey}
             accessibilityRole="button"
             accessibilityState={{ selected: isSelected }}
-            accessibilityLabel={`Ngày ${dateFromKey(dateKey).getDate()}`}
+            accessibilityLabel={`${isToday ? 'Hôm nay, ngày' : 'Ngày'} ${dateFromKey(dateKey).getDate()}`}
             onPress={() => onSelect(dateKey)}
-            style={styles.cell}
+            style={[styles.cell, isSelected && styles.cellSelected]}
           >
-            <AppText variant="captionSm" color="muted">
-              {index === 0 ? 'Nay' : weekdayLabel(dateKey)}
+            <AppText variant="captionSm" color={isSelected ? 'onDark' : 'muted'}>
+              {isToday ? 'Nay' : weekdayLabel(dateKey)}
             </AppText>
-            <View style={[styles.day, isSelected && styles.daySelected]}>
-              <AppText variant="bodySm" color={isSelected ? 'onDark' : 'ink'}>
-                {dateFromKey(dateKey).getDate()}
-              </AppText>
-            </View>
+            <AppText variant="displaySm" color={isSelected ? 'onDark' : 'ink'}>
+              {dateFromKey(dateKey).getDate()}
+            </AppText>
+            <View style={[styles.todayDot, isToday && styles.todayDotOn]} />
           </Pressable>
         );
       })}
@@ -41,8 +41,19 @@ export function DateStrip({ dateKeys, selected, onSelect }: DateStripProps) {
 }
 
 const styles = StyleSheet.create({
-  row: { gap: spacing.sm, paddingHorizontal: spacing.lg },
-  cell: { alignItems: 'center', gap: spacing.xs + spacing.xxs, minWidth: 44 },
-  day: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radius.full },
-  daySelected: { backgroundColor: colors.ink },
+  // A horizontal ScrollView otherwise stretches or collapses along the screen's column.
+  strip: { flexGrow: 0, flexShrink: 0 },
+  row: { flexGrow: 1, gap: spacing.xs, paddingHorizontal: spacing.lg },
+  cell: {
+    flex: 1,
+    minWidth: 44,
+    alignItems: 'center',
+    gap: spacing.xxs,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+    borderRadius: radius.md,
+  },
+  cellSelected: { backgroundColor: colors.ink },
+  todayDot: { width: 4, height: 4, borderRadius: radius.full },
+  todayDotOn: { backgroundColor: colors.primary },
 });

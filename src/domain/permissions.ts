@@ -1,4 +1,4 @@
-import type { UserRole } from './types';
+import type { Presence, User, UserRole } from './types';
 
 export type Permission =
   | 'booking.create'
@@ -22,4 +22,18 @@ const MATRIX: Record<UserRole, readonly Permission[]> = {
 
 export function can(role: UserRole, permission: Permission): boolean {
   return MATRIX[role].includes(permission);
+}
+
+export function getPresence(user: Pick<User, 'presence'>): Presence {
+  return user.presence ?? 'online';
+}
+
+/** Role check plus presence: an inactive user can look but not change anything. */
+export function canAct(user: Pick<User, 'role' | 'presence'>, permission: Permission): boolean {
+  return getPresence(user) !== 'inactive' && can(user.role, permission);
+}
+
+/** Only online users get reminders; busy and inactive users are left alone. */
+export function receivesNotifications(user: Pick<User, 'presence'>): boolean {
+  return getPresence(user) === 'online';
 }
