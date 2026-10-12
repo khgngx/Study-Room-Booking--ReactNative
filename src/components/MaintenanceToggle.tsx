@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Animated, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Pressable, View } from 'react-native';
 
+import { themed } from '../theme/themed';
 import { colors, radius, shadow, spacing } from '../theme/tokens';
 import { AppText } from './AppText';
 import { USE_NATIVE_DRIVER } from '../theme/motion';
@@ -58,7 +59,7 @@ export function MaintenanceToggle({ roomCode, value, locked, onPress }: Maintena
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   cell: {
     alignItems: 'center',
     gap: spacing.xs + spacing.xxs,
@@ -77,4 +78,4 @@ const styles = StyleSheet.create({
   onTrack: { backgroundColor: colors.primary },
   lockedTrack: { backgroundColor: colors.borderStrong },
   thumb: { width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: radius.full, backgroundColor: colors.canvas },
-});
+}));

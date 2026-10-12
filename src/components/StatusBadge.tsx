@@ -1,15 +1,12 @@
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 
 import type { RoomStatus } from '../domain/types';
-import { colors, radius, shadow, spacing } from '../theme/tokens';
+import { themed } from '../theme/themed';
+import { colors, radius, shadow, spacing, type ColorToken } from '../theme/tokens';
 import { AppText } from './AppText';
 import { ROOM_STATUS_LABEL } from './labels';
 
-const DOT_COLOR: Record<RoomStatus, string> = {
-  available: colors.ink,
-  occupied: colors.primary,
-  maintenance: colors.mutedSoft,
-};
+const DOT_COLOR: Record<RoomStatus, ColorToken> = { available: 'ink', occupied: 'primary', maintenance: 'mutedSoft' };
 
 interface PillBadgeProps {
   label: string;
@@ -29,10 +26,10 @@ export function PillBadge({ label, dotColor, floating = false, style }: PillBadg
 }
 
 export function RoomStatusBadge({ status, floating, style }: { status: RoomStatus } & Omit<PillBadgeProps, 'label' | 'dotColor'>) {
-  return <PillBadge label={ROOM_STATUS_LABEL[status]} dotColor={DOT_COLOR[status]} floating={floating} style={style} />;
+  return <PillBadge label={ROOM_STATUS_LABEL[status]} dotColor={colors[DOT_COLOR[status]]} floating={floating} style={style} />;
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -45,4 +42,4 @@ const styles = StyleSheet.create({
   },
   outlined: { borderWidth: 1, borderColor: colors.hairline },
   dot: { width: 6, height: 6, borderRadius: radius.full },
-});
+}));

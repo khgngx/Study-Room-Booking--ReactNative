@@ -15,6 +15,7 @@ import { confirmDestructive, showMessage } from '../../services/dialog';
 import { discardImage, pickImage, resolveImage } from '../../services/images';
 import { useBookingStore } from '../../store/useBookingStore';
 import { useRoomStore } from '../../store/useRoomStore';
+import { themed } from '../../theme/themed';
 import { colors, radius, spacing } from '../../theme/tokens';
 
 const CAPACITY_RANGE = { min: 2, max: 20 };
@@ -199,7 +200,7 @@ function Group({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   screen: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.lg, gap: spacing.lg },
   group: { gap: spacing.sm },
@@ -209,4 +210,4 @@ const styles = StyleSheet.create({
   pair: { flexDirection: 'row', gap: spacing.base },
   grow: { flex: 1 },
   multiline: { height: 96, paddingVertical: spacing.md, textAlignVertical: 'top' },
-});
+}));

@@ -1,10 +1,10 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useMemo, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
-import { DateStrip } from '../../components/DateStrip';
+import { CalendarButton, DateNavigator } from '../../components/DateNavigator';
 import { BOOKING_STATUS_LABEL, STAFF_ACTION_ERROR } from '../../components/labels';
 import { EmptyState, Screen, screenStyles } from '../../components/Layout';
 import { PillBadge } from '../../components/StatusBadge';
@@ -18,6 +18,7 @@ import { showMessage } from '../../services/dialog';
 import { useAccountStore } from '../../store/useAccountStore';
 import { useBookingStore, useCurrentUser, type StaffActionResult } from '../../store/useBookingStore';
 import { useRoomStore } from '../../store/useRoomStore';
+import { themed } from '../../theme/themed';
 import { colors, spacing } from '../../theme/tokens';
 
 function report(result: StaffActionResult) {
@@ -61,10 +62,11 @@ export function ShiftBookingsScreen({ navigation }: NativeStackScreenProps<Shift
     <Screen
       title="Ca trực"
       subtitle={area}
+      headerAction={<CalendarButton dateKeys={dateKeys} selected={dateKey} onSelect={setPickedDate} />}
       action={<Button label="Quét QR" variant="pill" onPress={() => navigation.navigate('Scan')} disabled={!canAct} />}
     >
       <View style={styles.dates}>
-        <DateStrip dateKeys={dateKeys} selected={dateKey} onSelect={setPickedDate} />
+        <DateNavigator dateKeys={dateKeys} selected={dateKey} onSelect={setPickedDate} />
       </View>
       <FlatList
         data={rows}
@@ -99,11 +101,11 @@ export function ShiftBookingsScreen({ navigation }: NativeStackScreenProps<Shift
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   dates: { paddingBottom: spacing.base, borderBottomWidth: 1, borderBottomColor: colors.hairline },
   separator: { height: 1, backgroundColor: colors.hairlineSoft },
   row: { gap: spacing.xs, paddingVertical: spacing.base },
   rowHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginTop: spacing.sm },
   grow: { flex: 1 },
-});
+}));

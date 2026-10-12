@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { TextInput, View, type TextInputProps } from 'react-native';
 
+import { themed } from '../theme/themed';
 import { colors, radius, spacing, typography } from '../theme/tokens';
+import { translate } from '../i18n';
 import { AppText } from './AppText';
 
 interface TextFieldProps extends TextInputProps {
@@ -18,7 +20,8 @@ export function TextField({ label, error, style, onFocus, onBlur, ...rest }: Tex
       </AppText>
       <TextInput
         {...rest}
-        accessibilityLabel={label}
+        placeholder={rest.placeholder === undefined ? undefined : translate(rest.placeholder)}
+        accessibilityLabel={translate(label)}
         placeholderTextColor={colors.muted}
         onFocus={(event) => {
           setFocused(true);
@@ -39,7 +42,7 @@ export function TextField({ label, error, style, onFocus, onBlur, ...rest }: Tex
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   wrapper: { gap: spacing.sm },
   input: {
     ...typography.bodyMd,
@@ -56,4 +59,4 @@ const styles = StyleSheet.create({
   // Padding shrinks by the extra border pixel so the text does not shift on focus.
   focused: { borderWidth: 2, borderColor: colors.ink, paddingHorizontal: spacing.md - 1 },
   invalid: { borderColor: colors.error },
-});
+}));

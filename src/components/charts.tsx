@@ -1,6 +1,7 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
+import { themed } from '../theme/themed';
 import { colors, radius, spacing, type ColorToken } from '../theme/tokens';
 import { AppText } from './AppText';
 
@@ -172,7 +173,7 @@ export function DonutChart({ segments, total, caption, size = 132 }: DonutChartP
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   columns: { flexDirection: 'row', alignItems: 'flex-end', gap: SEGMENT_GAP, borderBottomWidth: 1, borderBottomColor: colors.hairline },
   column: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
   valueLabel: { height: VALUE_LABEL_HEIGHT },
@@ -193,4 +194,4 @@ const styles = StyleSheet.create({
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   legendSwatch: { width: 10, height: 10, borderRadius: radius.full },
   legendShare: { width: 34, textAlign: 'right' },
-});
+}));

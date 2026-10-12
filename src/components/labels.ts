@@ -1,3 +1,4 @@
+import type { DayPart } from '../domain/time';
 import type { Ionicons } from '@expo/vector-icons';
 
 import type { BookingStatus, Equipment, Presence, RoomStatus, RoomType, UserRole } from '../domain/types';
@@ -42,6 +43,14 @@ export const ROLE_ICON: Record<UserRole, IconName> = {
   student: 'school-outline',
   lab_staff: 'construct-outline',
   facility_manager: 'business-outline',
+};
+
+/** The title of every role's home tab. */
+export const GREETING: Record<DayPart, string> = {
+  morning: 'Good morning',
+  afternoon: 'Good afternoon',
+  evening: 'Good evening',
+  night: 'Good night',
 };
 
 export const ROOM_STATUS_LABEL: Record<RoomStatus, string> = {

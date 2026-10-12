@@ -86,3 +86,34 @@ export function formatDateKey(dateKey: string): string {
   const date = dateFromKey(dateKey);
   return `${weekdayLabel(dateKey)}, ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
 }
+
+export type DayPart = 'morning' | 'afternoon' | 'evening' | 'night';
+
+/** Morning from 05:00, afternoon from 12:00, evening from 18:00, night from 22:00. */
+export function dayPart(date: Date): DayPart {
+  const hour = date.getHours();
+  if (hour >= 5 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 18) return 'afternoon';
+  if (hour >= 18 && hour < 22) return 'evening';
+  return 'night';
+}
+
+/**
+ * One calendar month as Monday-first weeks of date keys; null pads the days that belong to
+ * the neighbouring months. `monthIndex` is zero-based, as in `Date`.
+ */
+export function monthWeeks(year: number, monthIndex: number): (string | null)[][] {
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+  const leading = (new Date(year, monthIndex, 1).getDay() + 6) % 7;
+  const cells: (string | null)[] = Array.from({ length: leading }, () => null);
+  for (let day = 1; day <= daysInMonth; day += 1) cells.push(toDateKey(new Date(year, monthIndex, day)));
+  while (cells.length % 7 !== 0) cells.push(null);
+  return Array.from({ length: cells.length / 7 }, (_, week) => cells.slice(week * 7, week * 7 + 7));
+}
+
+/** The Monday-to-Sunday week that `dateKey` falls in. */
+export function weekOf(dateKey: string): string[] {
+  const date = dateFromKey(dateKey);
+  const monday = addDays(date, -((date.getDay() + 6) % 7));
+  return Array.from({ length: 7 }, (_, index) => toDateKey(addDays(monday, index)));
+}

@@ -17,11 +17,13 @@ import { MyBookingsScreen } from '../screens/student/MyBookingsScreen';
 import { RoomDetailScreen } from '../screens/student/RoomDetailScreen';
 import { RoomListScreen } from '../screens/student/RoomListScreen';
 import { can } from '../domain/permissions';
+import { translate } from '../i18n';
 import { useCurrentUser } from '../store/useBookingStore';
 import { colors, fonts } from '../theme/tokens';
 import type { AuthStackParams, ExploreStackParams, ProfileStackParams, RoomAdminStackParams, ShiftStackParams } from './types';
 
-const stackOptions: NativeStackNavigationOptions = {
+// Built per render so header and tab colours follow the theme.
+const stackOptions = (): NativeStackNavigationOptions => ({
   headerShadowVisible: false,
   headerTintColor: colors.ink,
   headerBackButtonDisplayMode: 'minimal',
@@ -30,15 +32,15 @@ const stackOptions: NativeStackNavigationOptions = {
   contentStyle: { backgroundColor: colors.canvas },
   // Pushed screens keep the status control in the same top-right spot as tab roots.
   headerRight: () => <PresencePill />,
-};
+});
 
-const tabOptions: BottomTabNavigationOptions = {
+const tabOptions = (): BottomTabNavigationOptions => ({
   headerShown: false,
   tabBarActiveTintColor: colors.primary,
   tabBarInactiveTintColor: colors.muted,
   tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 10 },
   tabBarStyle: { backgroundColor: colors.canvas, borderTopColor: colors.hairline },
-};
+});
 
 type IconName = keyof typeof Ionicons.glyphMap;
 const tabIcon =
@@ -54,7 +56,7 @@ const Tabs = createBottomTabNavigator();
 
 function AuthNavigator() {
   return (
-    <AuthStack.Navigator screenOptions={stackOptions}>
+    <AuthStack.Navigator screenOptions={stackOptions()}>
       <AuthStack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
       <AuthStack.Screen name="Register" component={RegisterScreen} options={{ title: '' }} />
     </AuthStack.Navigator>
@@ -63,7 +65,7 @@ function AuthNavigator() {
 
 function ExploreNavigator() {
   return (
-    <ExploreStack.Navigator screenOptions={stackOptions}>
+    <ExploreStack.Navigator screenOptions={stackOptions()}>
       <ExploreStack.Screen name="RoomList" component={RoomListScreen} options={{ headerShown: false }} />
       <ExploreStack.Screen name="RoomDetail" component={RoomDetailScreen} options={{ title: '' }} />
     </ExploreStack.Navigator>
@@ -72,21 +74,21 @@ function ExploreNavigator() {
 
 function ShiftNavigator() {
   return (
-    <ShiftStack.Navigator screenOptions={stackOptions}>
+    <ShiftStack.Navigator screenOptions={stackOptions()}>
       <ShiftStack.Screen name="ShiftBookings" component={ShiftBookingsScreen} options={{ headerShown: false }} />
-      <ShiftStack.Screen name="Scan" component={ScanScreen} options={{ title: 'Xác thực check-in' }} />
+      <ShiftStack.Screen name="Scan" component={ScanScreen} options={{ title: translate('Xác thực check-in') }} />
     </ShiftStack.Navigator>
   );
 }
 
 function RoomAdminNavigator() {
   return (
-    <RoomAdminStack.Navigator screenOptions={stackOptions}>
+    <RoomAdminStack.Navigator screenOptions={stackOptions()}>
       <RoomAdminStack.Screen name="ManageRooms" component={ManageRoomsScreen} options={{ headerShown: false }} />
       <RoomAdminStack.Screen
         name="RoomForm"
         component={RoomFormScreen}
-        options={({ route }) => ({ title: route.params.roomId ? 'Sửa phòng' : 'Thêm phòng' })}
+        options={({ route }) => ({ title: translate(route.params.roomId ? 'Sửa phòng' : 'Thêm phòng') })}
       />
     </RoomAdminStack.Navigator>
   );
@@ -94,11 +96,11 @@ function RoomAdminNavigator() {
 
 function ProfileNavigator() {
   return (
-    <ProfileStack.Navigator screenOptions={stackOptions}>
+    <ProfileStack.Navigator screenOptions={stackOptions()}>
       <ProfileStack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
       <ProfileStack.Screen name="Dashboard" component={DashboardScreen} options={{ title: '' }} />
       <ProfileStack.Screen name="Users" component={UsersScreen} options={{ title: '' }} />
-      <ProfileStack.Screen name="Policy" component={PolicyScreen} options={{ title: 'Chính sách sử dụng' }} />
+      <ProfileStack.Screen name="Policy" component={PolicyScreen} options={{ title: translate('Chính sách sử dụng') }} />
     </ProfileStack.Navigator>
   );
 }
@@ -109,21 +111,21 @@ function ProfileNavigator() {
  */
 function MainTabs({ operator }: { operator: boolean }) {
   return (
-    <Tabs.Navigator screenOptions={tabOptions}>
+    <Tabs.Navigator screenOptions={tabOptions()}>
       <Tabs.Screen
         name="Rooms"
         component={operator ? RoomAdminNavigator : ExploreNavigator}
         options={{
-          title: 'Phòng',
+          title: translate('Phòng'),
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="door" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="Schedule"
         component={operator ? ShiftNavigator : MyBookingsScreen}
-        options={{ title: 'Lịch của tôi', tabBarIcon: tabIcon('calendar-outline') }}
+        options={{ title: translate('Lịch của tôi'), tabBarIcon: tabIcon('calendar-outline') }}
       />
-      <Tabs.Screen name="Me" component={ProfileNavigator} options={{ title: 'Cá nhân', tabBarIcon: tabIcon('person-outline') }} />
+      <Tabs.Screen name="Me" component={ProfileNavigator} options={{ title: translate('Cá nhân'), tabBarIcon: tabIcon('person-outline') }} />
     </Tabs.Navigator>
   );
 }

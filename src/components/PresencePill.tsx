@@ -1,20 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PRESENCES, type Presence } from '../domain/types';
 import { usePresence } from '../hooks/usePresence';
 import { useBookingStore, useCurrentUser } from '../store/useBookingStore';
-import { colors, radius, spacing } from '../theme/tokens';
+import { themed } from '../theme/themed';
+import { colors, CONTROL_HEIGHT, radius, spacing, type ColorToken } from '../theme/tokens';
 import { AppText } from './AppText';
 import { PRESENCE_DESCRIPTION, PRESENCE_LABEL } from './labels';
 
-export const PRESENCE_DOT_COLOR: Record<Presence, string> = {
-  online: colors.success,
-  busy: colors.primary,
-  inactive: colors.mutedSoft,
-};
+/** Token names, not values: the dot must follow the theme in force when it renders. */
+export const PRESENCE_DOT_COLOR: Record<Presence, ColorToken> = { online: 'success', busy: 'primary', inactive: 'mutedSoft' };
 
 /** Top-right status control: shows the signed-in user's presence and lets them change it. */
 export function PresencePill() {
@@ -40,7 +38,7 @@ export function PresencePill() {
         onPress={() => setOpen(true)}
         style={styles.pill}
       >
-        <View style={[styles.dot, { backgroundColor: PRESENCE_DOT_COLOR[presence] }]} />
+        <View style={[styles.dot, { backgroundColor: colors[PRESENCE_DOT_COLOR[presence]] }]} />
         <AppText variant="buttonSm">{PRESENCE_LABEL[presence]}</AppText>
         <Ionicons name="chevron-down" size={14} color={colors.ink} />
       </Pressable>
@@ -62,7 +60,7 @@ export function PresencePill() {
                 onPress={() => choose(option)}
                 style={styles.option}
               >
-                <View style={[styles.dot, styles.optionDot, { backgroundColor: PRESENCE_DOT_COLOR[option] }]} />
+                <View style={[styles.dot, styles.optionDot, { backgroundColor: colors[PRESENCE_DOT_COLOR[option]] }]} />
                 <View style={styles.optionText}>
                   <AppText variant="titleMd">{PRESENCE_LABEL[option]}</AppText>
                   <AppText variant="bodySm" color="muted">
@@ -79,12 +77,12 @@ export function PresencePill() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs + spacing.xxs,
-    height: 36,
+    height: CONTROL_HEIGHT,
     paddingHorizontal: spacing.md,
     borderRadius: radius.full,
     borderWidth: 1,
@@ -119,4 +117,4 @@ const styles = StyleSheet.create({
   },
   optionDot: { width: 12, height: 12 },
   optionText: { flex: 1, gap: spacing.xxs },
-});
+}));

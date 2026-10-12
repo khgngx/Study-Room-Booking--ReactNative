@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, type StyleProp, type ViewStyle } from 'react-native';
 
+import { themed } from '../theme/themed';
 import { colors, radius, spacing } from '../theme/tokens';
 import { AppText } from './AppText';
 
@@ -43,7 +44,7 @@ export function Button({ label, onPress, variant = 'primary', disabled = false, 
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   base: { alignItems: 'center', justifyContent: 'center' },
   primary: { height: 48, paddingHorizontal: spacing.lg, borderRadius: radius.sm, backgroundColor: colors.primary },
   secondary: {
@@ -61,4 +62,4 @@ const styles = StyleSheet.create({
   plainPressed: { backgroundColor: colors.surfaceSoft },
   plainDisabled: { opacity: 0.4 },
   underline: { textDecorationLine: 'underline' },
-});
+}));

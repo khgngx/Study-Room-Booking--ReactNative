@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Avatar } from '../../components/Avatar';
+import { PreferencesBar } from '../../components/PreferencesBar';
 import { AvatarEditorSheet, type AvatarChange } from '../../components/AvatarEditorSheet';
 import { Button } from '../../components/Button';
 import { PRESENCE_LABEL, ROLE_ICON, ROLE_LABEL } from '../../components/labels';
@@ -23,6 +24,7 @@ import { sendTestReminder } from '../../services/notifications';
 import { useAccountStore } from '../../store/useAccountStore';
 import { useBookingStore, useCurrentUser } from '../../store/useBookingStore';
 import { useRoomStore } from '../../store/useRoomStore';
+import { themed } from '../../theme/themed';
 import { colors, radius, spacing } from '../../theme/tokens';
 
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -132,7 +134,7 @@ export function ProfileScreen({ navigation }: NativeStackScreenProps<ProfileStac
             <Avatar name={user.name} imageUrl={user.avatarUrl} size={AVATAR_SIZE} />
             <View
               accessibilityLabel={`Trạng thái: ${PRESENCE_LABEL[presence]}`}
-              style={[styles.presenceDot, { backgroundColor: PRESENCE_DOT_COLOR[presence] }]}
+              style={[styles.presenceDot, { backgroundColor: colors[PRESENCE_DOT_COLOR[presence]] }]}
             />
             <View style={styles.cameraBadge}>
               <Ionicons name="camera" size={14} color={colors.onPrimary} />
@@ -185,6 +187,10 @@ export function ProfileScreen({ navigation }: NativeStackScreenProps<ProfileStac
             ))}
           </Card>
         ) : null}
+
+        <Card title="Giao diện">
+          <PreferencesBar layout="list" />
+        </Card>
 
         <Card title="Tài khoản">
           {showTestReminder ? (
@@ -257,7 +263,7 @@ function Row({ icon, title, hint, tone = 'ink', divided = false, disabled = fals
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xxl, gap: spacing.lg },
   center: { textAlign: 'center' },
   hero: {
@@ -331,4 +337,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceSoft,
   },
   rowText: { flex: 1, gap: spacing.xxs },
-});
+}));

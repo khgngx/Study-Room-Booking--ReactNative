@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import type { SlotAvailability } from '../domain/conflict';
 import type { Slot } from '../domain/types';
+import { themed } from '../theme/themed';
 import { colors, radius, spacing } from '../theme/tokens';
 import { AppText } from './AppText';
 
@@ -55,7 +56,7 @@ export function SlotGrid({ slots, availability, selectedId, onSelect }: SlotGrid
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   slot: {
     flexGrow: 1,
@@ -71,4 +72,4 @@ const styles = StyleSheet.create({
   slotDisabled: { backgroundColor: colors.surfaceSoft, borderColor: colors.hairlineSoft },
   slotSelected: { backgroundColor: colors.ink, borderColor: colors.ink },
   strike: { textDecorationLine: 'line-through' },
-});
+}));

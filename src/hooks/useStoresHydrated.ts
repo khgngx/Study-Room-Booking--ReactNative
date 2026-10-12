@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react';
 import { useAccountStore } from '../store/useAccountStore';
 import { useBookingStore } from '../store/useBookingStore';
 import { usePolicyStore } from '../store/usePolicyStore';
+import { usePreferencesStore } from '../store/usePreferencesStore';
 import { useRoomStore } from '../store/useRoomStore';
 
-const stores = [useAccountStore, useBookingStore, usePolicyStore, useRoomStore];
+const stores = [useAccountStore, useBookingStore, usePolicyStore, usePreferencesStore, useRoomStore];
 const allHydrated = () => stores.every((store) => store.persist.hasHydrated());
 
 /** True once every persisted store has loaded from AsyncStorage. */

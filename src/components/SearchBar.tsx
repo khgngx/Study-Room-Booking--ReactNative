@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 
+import { translate } from '../i18n';
+import { themed } from '../theme/themed';
 import { colors, radius, shadow, spacing, typography } from '../theme/tokens';
 
 interface SearchBarProps {
@@ -17,9 +19,9 @@ export function SearchBar({ value, onChangeText, placeholder, autoFocus = false 
       <TextInput
         value={value}
         onChangeText={onChangeText}
-        placeholder={placeholder}
+        placeholder={translate(placeholder)}
         placeholderTextColor={colors.muted}
-        accessibilityLabel={placeholder}
+        accessibilityLabel={translate(placeholder)}
         autoCorrect={false}
         autoFocus={autoFocus}
         returnKeyType="search"
@@ -37,7 +39,7 @@ export function SearchBar({ value, onChangeText, placeholder, autoFocus = false 
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -65,4 +67,4 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: colors.primary,
   },
-});
+}));

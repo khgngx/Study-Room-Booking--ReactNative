@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { clampOffset, clampZoom, cropRect, displayedSize, MAX_ZOOM, MIN_ZOOM, type CropRect, type Point } from '../domain/crop';
 import { showMessage } from '../services/dialog';
 import { CAN_CROP_IN_APP, chooseImage, type PickedImage } from '../services/images';
+import { themed } from '../theme/themed';
 import { colors, radius, spacing } from '../theme/tokens';
 import { AppText } from './AppText';
 import { Avatar } from './Avatar';
@@ -209,7 +210,7 @@ function ZoomButton({ icon, label, disabled, onPress }: { icon: 'add' | 'remove'
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   scrim: { flex: 1, backgroundColor: colors.scrim },
   sheet: {
     marginTop: -radius.xl,
@@ -243,4 +244,4 @@ const styles = StyleSheet.create({
   zoomButtonDisabled: { opacity: 0.4 },
   actions: { flexDirection: 'row', gap: spacing.md },
   action: { flex: 1 },
-});
+}));

@@ -1,5 +1,6 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
+import { themed } from '../theme/themed';
 import { colors, radius, spacing } from '../theme/tokens';
 import { AppText } from './AppText';
 
@@ -20,7 +21,7 @@ export function RoomCodePlate({ code, size = 'md' }: RoomCodePlateProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   plate: {
     alignSelf: 'flex-start',
     paddingVertical: spacing.xs,
@@ -29,4 +30,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink,
   },
   plateLarge: { paddingVertical: spacing.sm, paddingHorizontal: spacing.base, borderRadius: radius.sm },
-});
+}));

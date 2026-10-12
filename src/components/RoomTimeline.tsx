@@ -1,7 +1,8 @@
 import { memo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import type { DaySegments, TimeRange } from '../domain/timeline';
+import { themed } from '../theme/themed';
 import { colors, radius } from '../theme/tokens';
 import { AppText } from './AppText';
 import { Hatch } from './Hatch';
@@ -65,7 +66,7 @@ export function TimelineAxis({ range }: Pick<RoomTimelineProps, 'range'>) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   wrapper: { height: BAR_HEIGHT + NOW_OVERHANG * 2, justifyContent: 'center' },
   track: { height: BAR_HEIGHT, borderRadius: radius.xs, overflow: 'hidden', backgroundColor: colors.success },
   segment: { position: 'absolute', top: 0, bottom: 0 },
@@ -76,4 +77,4 @@ const styles = StyleSheet.create({
   now: { position: 'absolute', top: 0, bottom: 0, width: 2, marginLeft: -1, borderRadius: radius.full, backgroundColor: colors.primary },
   axis: { height: 18 },
   axisLabel: { position: 'absolute', top: 0, width: AXIS_LABEL_WIDTH, marginLeft: -AXIS_LABEL_WIDTH / 2, textAlign: 'center' },
-});
+}));

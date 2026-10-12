@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 
 import { overlaps, sameRange, type MinuteRange, type SlotAvailability } from '../domain/conflict';
 import { formatDuration, formatMinutes, formatRange } from '../domain/time';
 import type { TimeRange } from '../domain/timeline';
 import type { Slot } from '../domain/types';
+import { themed } from '../theme/themed';
 import { colors, radius, spacing, type ColorToken } from '../theme/tokens';
 import { AppText } from './AppText';
 import { Hatch } from './Hatch';
@@ -269,7 +270,7 @@ function BlockText({ tone, height, title, detail }: { tone: Tone; height: number
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   schedule: { flexDirection: 'row', paddingTop: LABEL_LINE_HEIGHT / 2 },
   labels: { width: LABEL_WIDTH },
   label: { position: 'absolute', left: 0, marginTop: -LABEL_LINE_HEIGHT / 2, lineHeight: LABEL_LINE_HEIGHT },
@@ -302,4 +303,4 @@ const styles = StyleSheet.create({
   closedLabel: { alignSelf: 'flex-start', paddingHorizontal: spacing.xs, borderRadius: radius.xs, backgroundColor: colors.surfaceSoft },
   now: { position: 'absolute', left: 0, right: 0, height: 2, marginTop: -1, zIndex: 2, backgroundColor: colors.primary },
   nowDot: { position: 'absolute', left: -5, top: -4, width: 10, height: 10, borderRadius: radius.full, backgroundColor: colors.primary },
-});
+}));
