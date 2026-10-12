@@ -8,6 +8,13 @@ export const colors = {
   primary: '#ff5a5f',
   primaryActive: '#e61e4d',
   primaryDisabled: '#ffcfd0',
+  // Tints of Rausch, Babu and Arches: fills that carry a state without shouting.
+  primarySoft: '#fff0f1',
+  successSoft: '#e3f6f4',
+  accentSoft: '#fff1ea',
+  // Arches: the palette's warm accent, for highlights that are neither an action nor a state.
+  accent: '#fc642d',
+  accentInk: '#b8400f',
   error: '#c13515',
   // Babu: the positive signal (free rooms, presence) that Rausch and Hof cannot carry.
   success: '#00a699',
@@ -28,6 +35,9 @@ export const colors = {
   onPrimary: '#ffffff',
   onDark: '#ffffff',
   scrim: 'rgba(72, 72, 72, 0.6)',
+  // Frosted panels that let a moving backdrop show through.
+  glass: 'rgba(255, 255, 255, 0.5)',
+  glassBorder: 'rgba(255, 255, 255, 0.9)',
 } as const;
 
 export type ColorToken = keyof typeof colors;

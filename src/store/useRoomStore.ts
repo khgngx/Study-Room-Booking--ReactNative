@@ -2,22 +2,25 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 import { SEED_ROOMS } from '../data/seed';
-import type { Room } from '../domain/types';
+import { getMaintenanceAccess, type MaintenanceAccess } from '../domain/permissions';
+import type { Room, User } from '../domain/types';
 import { createId, jsonStorage } from './storage';
 
 export type RoomDraft = Omit<Room, 'id'>;
+export type MaintenanceResult = { ok: true } | { ok: false; reason: Exclude<MaintenanceAccess, 'allowed'> | 'room_not_found' };
 
 interface RoomState {
   rooms: Room[];
   addRoom: (draft: RoomDraft) => Room;
   updateRoom: (id: string, changes: Partial<RoomDraft>) => void;
   deleteRoom: (id: string) => void;
-  setMaintenance: (id: string, underMaintenance: boolean, note?: string) => void;
+  /** Checked against `actor` here as well as in the UI, so a stale screen cannot switch a room outside its area. */
+  setMaintenance: (input: { id: string; underMaintenance: boolean; actor: User; note?: string }) => MaintenanceResult;
 }
 
 export const useRoomStore = create<RoomState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       rooms: SEED_ROOMS,
       addRoom: (draft) => {
         const room: Room = { ...draft, id: createId('room') };
@@ -27,12 +30,18 @@ export const useRoomStore = create<RoomState>()(
       updateRoom: (id, changes) =>
         set((state) => ({ rooms: state.rooms.map((room) => (room.id === id ? { ...room, ...changes } : room)) })),
       deleteRoom: (id) => set((state) => ({ rooms: state.rooms.filter((room) => room.id !== id) })),
-      setMaintenance: (id, underMaintenance, note) =>
+      setMaintenance: ({ id, underMaintenance, actor, note }) => {
+        const target = get().rooms.find((room) => room.id === id);
+        if (!target) return { ok: false, reason: 'room_not_found' };
+        const access = getMaintenanceAccess(actor, target);
+        if (access !== 'allowed') return { ok: false, reason: access };
         set((state) => ({
           rooms: state.rooms.map((room) =>
             room.id === id ? { ...room, underMaintenance, maintenanceNote: underMaintenance ? note : undefined } : room,
           ),
-        })),
+        }));
+        return { ok: true };
+      },
     }),
     {
       name: 'vku-rooms',

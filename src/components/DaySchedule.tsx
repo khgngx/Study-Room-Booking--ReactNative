@@ -33,8 +33,8 @@ type Tone = 'free' | 'selected' | 'mine' | 'booked' | 'off';
 
 const TEXT_COLOR: Record<Tone, { title: ColorToken; detail: ColorToken }> = {
   free: { title: 'ink', detail: 'successInk' },
-  selected: { title: 'onDark', detail: 'onDark' },
-  mine: { title: 'onPrimary', detail: 'onPrimary' },
+  selected: { title: 'onPrimary', detail: 'onPrimary' },
+  mine: { title: 'onDark', detail: 'onDark' },
   booked: { title: 'ink', detail: 'muted' },
   off: { title: 'mutedSoft', detail: 'mutedSoft' },
 };
@@ -73,18 +73,22 @@ interface DayScheduleProps {
   /** Bookable leftovers inside slots that a booking only partly covers. */
   gaps: readonly TimeRange[];
   closed: readonly TimeRange[];
-  /** Every time picked so far; tapping a picked slot again drops it. */
+  /** Every time picked so far, whole slots and custom times alike. */
   selections: readonly MinuteRange[];
   /** Minutes of day for the "now" line, or null when another day is shown. */
   nowMinutes: number | null;
-  onSelect: (slot: Slot) => void;
+  /** Tap on a free slot or on a picked time: the screen picks it or drops it. */
+  onSelect: (range: MinuteRange) => void;
   /** Long-press or right-click: the student wants to set their own time, starting from this stretch. */
   onCustomize: (range: MinuteRange) => void;
   /** Tap on one of the viewer's own cancellable bookings. */
   onCancelBooking: (bookingId: string) => void;
 }
 
-/** A room's day as a vertical calendar: tap free slots to pick or drop them, hold one to set a custom time. */
+/**
+ * A room's day as a vertical calendar: tap free slots to pick or drop them, hold one to set a custom time.
+ * Every stretch of time belongs to exactly one block, so no label is ever drawn over another.
+ */
 export function DaySchedule({ range, slots, availability, bookings, gaps, closed, selections, nowMinutes, onSelect, onCustomize, onCancelBooking }: DayScheduleProps) {
   const offset = (minutes: number) => (minutes - range.startMinutes) * PIXELS_PER_MINUTE;
   const place = (segment: MinuteRange) => {
@@ -97,10 +101,11 @@ export function DaySchedule({ range, slots, availability, bookings, gaps, closed
   for (let minutes = range.startMinutes; minutes <= range.endMinutes; minutes += STEP_MINUTES) ticks.push(minutes);
   const showNow = nowMinutes !== null && nowMinutes >= range.startMinutes && nowMinutes <= range.endMinutes;
 
-  // A slot a booking cuts into is not offered whole; the booking and its leftover gaps are drawn instead.
-  const wholeSlots = slots.filter((slot) => isVisible(slot) && !bookings.some((booking) => overlaps(booking, slot)));
+  const customSelections = selections.filter((picked) => !slots.some((slot) => sameRange(slot, picked)));
+  // A slot that a booking or a custom time cuts into is not offered whole; that block and the leftover gaps are drawn instead.
+  const carved = [...bookings, ...customSelections];
+  const wholeSlots = slots.filter((slot) => isVisible(slot) && !carved.some((taken) => overlaps(taken, slot)));
   const selectedSlots = wholeSlots.filter((slot) => availability[slot.id] === 'available' && selections.some((picked) => sameRange(slot, picked)));
-  const customSelections = selections.filter((picked) => isVisible(picked) && !selectedSlots.some((slot) => sameRange(slot, picked)));
 
   return (
     <View style={[styles.schedule, { height: offset(range.endMinutes) + LABEL_LINE_HEIGHT }]}>
@@ -165,7 +170,7 @@ export function DaySchedule({ range, slots, availability, bookings, gaps, closed
               style={[styles.block, styles[selected ? 'selected' : free ? 'free' : 'off'], place(slot)]}
             >
               <BlockText tone={selected ? 'selected' : free ? 'free' : 'off'} height={place(slot).height} title={title} detail={detail} />
-              {selected ? <Ionicons name="checkmark-circle" size={20} color={colors.onDark} /> : null}
+              {selected ? <Ionicons name="checkmark-circle" size={20} color={colors.onPrimary} /> : null}
             </Pressable>
           );
         })}
@@ -209,23 +214,33 @@ export function DaySchedule({ range, slots, availability, bookings, gaps, closed
               style={[styles.block, styles[tone], place(booking)]}
             >
               <BlockText tone={tone} height={place(booking).height} title={title} detail={`${label} · chạm để huỷ`} />
-              {place(booking).height >= ONE_LINE_HEIGHT ? <Ionicons name="close-circle" size={20} color={colors.onPrimary} /> : null}
+              {place(booking).height >= ONE_LINE_HEIGHT ? <Ionicons name="close-circle" size={20} color={colors.onDark} /> : null}
             </Pressable>
           );
         })}
 
-        {customSelections.map((picked) => (
-          // Sits above the slots it crosses; touches fall through so the same spot can be held again to re-edit.
-          <View key={picked.startMinutes} pointerEvents="none" style={[styles.block, styles.selected, styles.raised, place(picked)]}>
-            <BlockText
-              tone="selected"
-              height={place(picked).height}
-              title={formatRange(picked.startMinutes, picked.endMinutes)}
-              detail={`Đã chọn · ${formatDuration(picked.endMinutes - picked.startMinutes)}`}
-            />
-            {place(picked).height >= ONE_LINE_HEIGHT ? <Ionicons name="checkmark-circle" size={20} color={colors.onDark} /> : null}
-          </View>
-        ))}
+        {customSelections.filter(isVisible).map((picked) => {
+          const label = formatRange(picked.startMinutes, picked.endMinutes);
+          const customize = () => onCustomize(picked);
+          return (
+            <Pressable
+              key={picked.startMinutes}
+              accessibilityRole="button"
+              accessibilityState={{ selected: true }}
+              accessibilityLabel={`${label}, đã chọn`}
+              accessibilityHint="Chạm để bỏ chọn, nhấn giữ để chỉnh lại giờ"
+              accessibilityActions={[{ name: 'longpress', label: 'Chỉnh lại giờ' }]}
+              onAccessibilityAction={customize}
+              onPress={() => onSelect(picked)}
+              onLongPress={customize}
+              {...onRightClick(customize)}
+              style={[styles.block, styles.selected, place(picked)]}
+            >
+              <BlockText tone="selected" height={place(picked).height} title={label} detail={`Chạm để bỏ · ${formatDuration(picked.endMinutes - picked.startMinutes)}`} />
+              {place(picked).height >= ONE_LINE_HEIGHT ? <Ionicons name="checkmark-circle" size={20} color={colors.onPrimary} /> : null}
+            </Pressable>
+          );
+        })}
 
         {showNow ? (
           <View pointerEvents="none" style={[styles.now, { top: offset(nowMinutes) }]}>
@@ -277,11 +292,10 @@ const styles = StyleSheet.create({
   blockText: { flex: 1, gap: spacing.xxs },
   blockTextRoomy: { paddingVertical: spacing.xs + spacing.xxs },
   blockTextCompact: { justifyContent: 'center', alignSelf: 'stretch' },
-  free: { borderColor: colors.borderStrong, backgroundColor: colors.canvas },
-  selected: { borderColor: colors.ink, backgroundColor: colors.ink },
-  raised: { zIndex: 1 },
-  // The deeper Rausch keeps white text readable.
-  mine: { borderColor: colors.primaryActive, backgroundColor: colors.primaryActive },
+  free: { borderColor: colors.success, backgroundColor: colors.successSoft },
+  // The deeper Rausch and Kazan keep white text readable.
+  selected: { borderColor: colors.primaryActive, backgroundColor: colors.primaryActive },
+  mine: { borderColor: colors.successInk, backgroundColor: colors.successInk },
   booked: { backgroundColor: colors.surfaceStrong },
   off: { backgroundColor: colors.surfaceSoft },
   closed: { backgroundColor: colors.surfaceSoft },

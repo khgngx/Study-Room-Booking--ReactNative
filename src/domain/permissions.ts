@@ -1,4 +1,4 @@
-import type { Presence, User, UserRole } from './types';
+import type { Presence, Room, User, UserRole } from './types';
 
 export type Permission =
   | 'booking.create'
@@ -36,4 +36,20 @@ export function canAct(user: Pick<User, 'role' | 'presence'>, permission: Permis
 /** Only online users get reminders; busy and inactive users are left alone. */
 export function receivesNotifications(user: Pick<User, 'presence'>): boolean {
   return getPresence(user) === 'online';
+}
+
+export type MaintenanceAccess = 'allowed' | 'forbidden' | 'out_of_area' | 'inactive';
+
+/**
+ * Whether `user` may switch maintenance for `room`. Lab staff only cover the buildings a facility
+ * manager assigned to them; whoever sees all areas covers every building.
+ */
+export function getMaintenanceAccess(
+  user: Pick<User, 'role' | 'presence' | 'assignedBuildings'>,
+  room: Pick<Room, 'building'>,
+): MaintenanceAccess {
+  if (!can(user.role, 'room.setMaintenance')) return 'forbidden';
+  const covered = can(user.role, 'booking.viewAllAreas') || (user.assignedBuildings ?? []).includes(room.building);
+  if (!covered) return 'out_of_area';
+  return getPresence(user) === 'inactive' ? 'inactive' : 'allowed';
 }

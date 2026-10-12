@@ -31,7 +31,15 @@
           "recordAudioAndroid": false
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Ứng dụng dùng thư viện ảnh để bạn chọn ảnh đại diện và ảnh phòng.",
+          "microphonePermission": false
+        }
+      ]
     ]
   }
 }

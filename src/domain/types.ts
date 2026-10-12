@@ -40,6 +40,8 @@ export interface User {
   // Absent on accounts saved before presence existed; treated as online.
   presence?: Presence;
   studentId?: string;
+  /** A picked photo (see `services/images`); the initials stand in when absent. */
+  avatarUrl?: string;
   // Buildings a lab staff member is responsible for.
   assignedBuildings?: Building[];
 }

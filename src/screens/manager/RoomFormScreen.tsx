@@ -1,5 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useState } from 'react';
+import { Image } from 'expo-image';
+import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
@@ -10,10 +11,11 @@ import { TextField } from '../../components/TextField';
 import { placeholderImage } from '../../data/seed';
 import { BUILDINGS, EQUIPMENT, ROOM_TYPES, type Building, type Equipment, type RoomType } from '../../domain/types';
 import type { RoomAdminStackParams } from '../../navigation/types';
-import { confirmDestructive } from '../../services/dialog';
+import { confirmDestructive, showMessage } from '../../services/dialog';
+import { discardImage, pickImage, resolveImage } from '../../services/images';
 import { useBookingStore } from '../../store/useBookingStore';
 import { useRoomStore } from '../../store/useRoomStore';
-import { colors, spacing } from '../../theme/tokens';
+import { colors, radius, spacing } from '../../theme/tokens';
 
 const CAPACITY_RANGE = { min: 2, max: 20 };
 const FLOOR_RANGE = { min: 1, max: 20 };
@@ -39,6 +41,27 @@ export function RoomFormScreen({ navigation, route }: NativeStackScreenProps<Roo
   const [description, setDescription] = useState(existing?.description ?? '');
   const [equipment, setEquipment] = useState<Equipment[]>(existing?.equipment ?? []);
   const [note, setNote] = useState(existing?.maintenanceNote ?? '');
+  // Undefined means "the default placeholder for this room code".
+  const [imageUrl, setImageUrl] = useState(existing?.imageUrl);
+  // A photo picked but not saved yet; dropped if the form is left without saving.
+  const unsavedImage = useRef<string | undefined>(undefined);
+  useEffect(() => () => discardImage(unsavedImage.current), []);
+
+  const replaceImage = (next: string | undefined) => {
+    discardImage(unsavedImage.current);
+    unsavedImage.current = next;
+    setImageUrl(next);
+  };
+
+  const changeImage = async () => {
+    try {
+      const picked = await pickImage('room');
+      if (picked) replaceImage(picked);
+    } catch (error) {
+      console.warn('Changing the room photo failed', error);
+      showMessage('Chưa đổi được ảnh', 'Không đọc được ảnh vừa chọn. Vui lòng thử ảnh khác.');
+    }
+  };
   const [errors, setErrors] = useState<{ code?: string; name?: string; floor?: string; capacity?: string }>({});
 
   const save = () => {
@@ -54,12 +77,24 @@ export function RoomFormScreen({ navigation, route }: NativeStackScreenProps<Roo
     setErrors(next);
     if (parsedFloor === null || parsedCapacity === null || next.name || next.code) return;
 
-    const fields = { code: trimmedCode, name: name.trim(), type, building, floor: parsedFloor, capacity: parsedCapacity, equipment, description: description.trim() || undefined };
+    const fields = {
+      code: trimmedCode,
+      name: name.trim(),
+      type,
+      building,
+      floor: parsedFloor,
+      capacity: parsedCapacity,
+      equipment,
+      description: description.trim() || undefined,
+      imageUrl: imageUrl ?? placeholderImage(trimmedCode),
+    };
     if (existing) {
       updateRoom(existing.id, { ...fields, maintenanceNote: existing.underMaintenance ? note.trim() || undefined : undefined });
+      if (existing.imageUrl !== fields.imageUrl) discardImage(existing.imageUrl);
     } else {
-      addRoom({ ...fields, imageUrl: placeholderImage(fields.code), underMaintenance: false });
+      addRoom({ ...fields, underMaintenance: false });
     }
+    unsavedImage.current = undefined;
     navigation.goBack();
   };
 
@@ -73,6 +108,7 @@ export function RoomFormScreen({ navigation, route }: NativeStackScreenProps<Roo
       onConfirm: () => {
         cancelUpcomingForRoom(existing.id);
         deleteRoom(existing.id);
+        discardImage(existing.imageUrl);
         navigation.goBack();
       },
     });
@@ -81,6 +117,26 @@ export function RoomFormScreen({ navigation, route }: NativeStackScreenProps<Roo
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+        <View style={styles.group}>
+          <AppText variant="caption" color="muted">
+            Ảnh phòng
+          </AppText>
+          <View style={styles.photo}>
+            <Image
+              source={resolveImage(imageUrl) ?? placeholderImage(code.trim().toUpperCase() || 'new')}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              transition={150}
+              accessibilityLabel="Ảnh phòng hiện tại"
+            />
+          </View>
+          <View style={styles.photoActions}>
+            <Button label="Chọn ảnh từ máy" variant="secondary" onPress={() => void changeImage()} style={styles.grow} />
+            {imageUrl && imageUrl !== placeholderImage(existing?.code ?? '') ? (
+              <Button label="Dùng ảnh mặc định" variant="tertiary" onPress={() => replaceImage(undefined)} />
+            ) : null}
+          </View>
+        </View>
         <TextField label="Mã phòng" value={code} onChangeText={setCode} placeholder="VD: A-302" autoCapitalize="characters" autoCorrect={false} error={errors.code} />
         <TextField label="Tên phòng" value={name} onChangeText={setName} placeholder="VD: Lab IoT và hệ thống nhúng" error={errors.name} />
         <Group label="Loại phòng">
@@ -147,6 +203,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.lg, gap: spacing.lg },
   group: { gap: spacing.sm },
+  photo: { aspectRatio: 4 / 3, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surfaceStrong },
+  photoActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   pair: { flexDirection: 'row', gap: spacing.base },
   grow: { flex: 1 },
