@@ -6,12 +6,13 @@ Mini-Project 2, Cross-platform Programming (VKU). A React Native + Expo app for 
 
 | Area | What works |
 |---|---|
-| Room discovery | `FlatList` of memoized room cards, instant search, filter chips for building (A/B/C/V), capacity and equipment, live Available / Occupied / Maintenance badge |
-| Booking | 7-day date strip, discrete time slots, conflict engine that disables taken slots, daily limit, QR booking pass |
+| Room discovery | `FlatList` of memoized room cards with a per-room day timeline (7h–21h, live "now" marker), 7-day date strip, "free now" toggle, room-type chips, search, and a filter sheet for building, capacity and equipment |
+| Booking | 7-day date strip, discrete time slots, multi-slot selection (up to 4 bookings a day by default), custom `HH:mm` times where extra minutes roll into the hour, conflict engine that disables taken slots, QR booking pass |
 | State | Zustand stores persisted with AsyncStorage (`useBookingStore` holds the session and reservations) |
 | Notifications | Local `expo-notifications` reminder 15 minutes before check-in, cancelled with the booking |
 | Lab staff | Shift list scoped to assigned buildings, QR scan or manual code check-in, no-show marking, maintenance toggle |
 | Facility manager | Room CRUD, account roles, usage dashboard, usage policy |
+| Presence | Status pill at the top right: Trực tiếp (full use), Đang bận (no notifications), Không hoạt động (read-only) |
 
 ## Getting started
 
@@ -45,7 +46,7 @@ src/
   domain/       Pure TypeScript: slots, conflict engine, room status, filters, check-in rules, permissions, stats
   store/        Zustand stores (bookings + session, rooms, accounts, policy), persisted through one storage adapter
   services/     expo-notifications wrapper
-  navigation/   React Navigation; one navigator tree per role
+  navigation/   React Navigation; three tabs (Phòng, Lịch của tôi, Cá nhân) wired per role
   screens/      auth / student / staff / manager / shared
   components/   Design-system components
   theme/        Design tokens
@@ -55,6 +56,8 @@ src/
 The conflict engine (`src/domain/conflict.ts`) is a pure function. The UI uses it to disable slots, and `createBooking` re-runs it before writing, so a stale screen cannot double-book.
 
 Room status is derived from bookings and the clock; only the maintenance flag is stored.
+
+Presence is enforced in two places: `useBookingStore` rejects actions from an inactive user, and screens disable their controls. Going busy or inactive cancels pending check-in reminders; going back online reschedules them.
 
 ## Design
 
