@@ -1,4 +1,4 @@
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Avatar } from '../../components/Avatar';
@@ -9,6 +9,7 @@ import { BUILDINGS, type UserRole } from '../../domain/types';
 import { useCanAct } from '../../hooks/usePresence';
 import { useAccountStore } from '../../store/useAccountStore';
 import { useBookingStore } from '../../store/useBookingStore';
+import { themed } from '../../theme/themed';
 import { colors, spacing } from '../../theme/tokens';
 
 const ROLES: UserRole[] = ['student', 'lab_staff', 'facility_manager'];
@@ -82,10 +83,10 @@ export function UsersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   separator: { height: 1, backgroundColor: colors.hairlineSoft },
   row: { gap: spacing.sm, paddingVertical: spacing.base },
   identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   identityText: { flex: 1, gap: spacing.xxs },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-});
+}));

@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 
 import { buildSeedBookings } from '../data/seed';
 import { validateCheckIn, type CheckInRejection } from '../domain/checkin';
-import { getSlotAvailability, validateBookingRange, type MinuteRange, type RangeRejection, type SlotAvailability } from '../domain/conflict';
+import { getSlotAvailability, isWithinBookingHorizon, validateBookingRange, type MinuteRange, type RangeRejection, type SlotAvailability } from '../domain/conflict';
 import { can, getPresence, receivesNotifications } from '../domain/permissions';
 import { dateFromKey } from '../domain/time';
 import type { Booking, Presence, User } from '../domain/types';
@@ -13,7 +13,7 @@ import { useAccountStore } from './useAccountStore';
 import { usePolicyStore } from './usePolicyStore';
 import { useRoomStore } from './useRoomStore';
 
-type BookingFailure = Exclude<SlotAvailability, 'available'> | RangeRejection | 'forbidden' | 'inactive' | 'room_not_found';
+type BookingFailure = Exclude<SlotAvailability, 'available'> | RangeRejection | 'too_far' | 'forbidden' | 'inactive' | 'room_not_found';
 export type CreateBookingResult = { ok: true; booking: Booking } | { ok: false; reason: BookingFailure };
 export type StaffActionResult = { ok: true } | { ok: false; reason: CheckInRejection | 'forbidden' | 'inactive' | 'not_started' };
 
@@ -86,6 +86,7 @@ export const useBookingStore = create<BookingState>()(
         const room = useRoomStore.getState().rooms.find((candidate) => candidate.id === roomId);
         if (!room) return { ok: false, reason: 'room_not_found' };
         const { policy } = usePolicyStore.getState();
+        if (!isWithinBookingHorizon(dateKey, new Date())) return { ok: false, reason: 'too_far' };
         const rangeRejection = validateBookingRange(slot, policy);
         if (rangeRejection) return { ok: false, reason: rangeRejection };
 

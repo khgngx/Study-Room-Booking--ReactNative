@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { memo } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable } from 'react-native';
 
+import { themed } from '../theme/themed';
 import { colors, radius, spacing } from '../theme/tokens';
 import { AppText } from './AppText';
 
@@ -33,7 +34,7 @@ export const Chip = memo(function Chip({ label, selected, onPress, icon, disable
   );
 });
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -46,6 +47,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.canvas,
   },
   selected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  toggledOn: { borderColor: colors.successInk, backgroundColor: colors.successInk },
+  toggledOn: { borderColor: colors.successStrong, backgroundColor: colors.successStrong },
   disabled: { opacity: 0.4 },
-});
+}));

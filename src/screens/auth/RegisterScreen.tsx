@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
 import { useAccountStore } from '../../store/useAccountStore';
 import { useBookingStore } from '../../store/useBookingStore';
+import { themed } from '../../theme/themed';
 import { colors, spacing } from '../../theme/tokens';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -64,7 +65,7 @@ export function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   flex: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.lg, gap: spacing.base },
-});
+}));

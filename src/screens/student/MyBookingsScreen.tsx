@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
@@ -14,6 +14,7 @@ import { useCanAct } from '../../hooks/usePresence';
 import { confirmDestructive } from '../../services/dialog';
 import { useBookingStore } from '../../store/useBookingStore';
 import { useRoomStore } from '../../store/useRoomStore';
+import { themed } from '../../theme/themed';
 import { colors, radius, spacing } from '../../theme/tokens';
 
 type Tab = 'upcoming' | 'history';
@@ -122,7 +123,7 @@ export function MyBookingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   tabs: {
     flexDirection: 'row',
     gap: spacing.lg,
@@ -145,4 +146,4 @@ const styles = StyleSheet.create({
   cardTitle: { flex: 1 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginTop: spacing.md },
   grow: { flex: 1 },
-});
+}));

@@ -2,16 +2,17 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Image } from 'expo-image';
 import { useMemo } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
-import { formatLocation, MAINTENANCE_DENIED, ROOM_STATUS_LABEL } from '../../components/labels';
+import { GREETING, formatLocation, MAINTENANCE_DENIED, ROOM_STATUS_LABEL } from '../../components/labels';
 import { EmptyState, Screen, screenStyles } from '../../components/Layout';
 import { MaintenanceToggle } from '../../components/MaintenanceToggle';
 import { can, getMaintenanceAccess } from '../../domain/permissions';
 import { getRoomStatus } from '../../domain/roomStatus';
 import type { Room } from '../../domain/types';
+import { dayPart } from '../../domain/time';
 import { useNow } from '../../hooks/useNow';
 import { useCanAct } from '../../hooks/usePresence';
 import type { RoomAdminStackParams } from '../../navigation/types';
@@ -19,6 +20,7 @@ import { showMessage } from '../../services/dialog';
 import { resolveImage } from '../../services/images';
 import { useBookingStore, useCurrentUser } from '../../store/useBookingStore';
 import { useRoomStore } from '../../store/useRoomStore';
+import { themed } from '../../theme/themed';
 import { colors, radius, spacing } from '../../theme/tokens';
 
 /**
@@ -56,7 +58,7 @@ export function ManageRoomsScreen({ navigation }: NativeStackScreenProps<RoomAdm
 
   return (
     <Screen
-      title="Phòng"
+      title={GREETING[dayPart(now)]}
       subtitle={`${rooms.length} phòng · Khu phụ trách: ${area}`}
       action={canEdit ? <Button label="Thêm phòng" variant="pill" onPress={() => navigation.navigate('RoomForm', {})} disabled={!active} /> : undefined}
     >
@@ -125,7 +127,7 @@ function LegendItem({ label, swatch }: { label: string; swatch: object }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   list: { gap: spacing.md },
   card: {
     flexDirection: 'row',
@@ -148,4 +150,4 @@ const styles = StyleSheet.create({
   swatchOff: { borderColor: colors.success, backgroundColor: colors.successSoft },
   swatchOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   swatchLocked: { borderColor: colors.hairline, backgroundColor: colors.surfaceStrong },
-});
+}));

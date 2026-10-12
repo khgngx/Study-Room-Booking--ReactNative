@@ -3,7 +3,8 @@ import { useEffect, useId, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 
-import { colors, type ColorToken } from '../theme/tokens';
+import { themed } from '../theme/themed';
+import { colors, fixed, type ColorToken } from '../theme/tokens';
 import { USE_NATIVE_DRIVER } from '../theme/motion';
 
 const LOGO = require('../../assets/vku-logo.png');
@@ -134,12 +135,12 @@ function Ball({ color, size, logo }: Pick<BallSpec, 'color' | 'size' | 'logo'>) 
         <Defs>
           {/* Light falls from the upper left: a bright core there, the far edge in shadow. */}
           <RadialGradient id={`${id}shade`} cx="36%" cy="30%" r="78%">
-            <Stop offset="0.45" stopColor={colors.ink} stopOpacity={0} />
-            <Stop offset="1" stopColor={colors.ink} stopOpacity={0.5} />
+            <Stop offset="0.45" stopColor={fixed.shade} stopOpacity={0} />
+            <Stop offset="1" stopColor={fixed.shade} stopOpacity={0.5} />
           </RadialGradient>
           <RadialGradient id={`${id}glow`} cx="34%" cy="28%" r="52%">
-            <Stop offset="0" stopColor={colors.canvas} stopOpacity={0.55} />
-            <Stop offset="1" stopColor={colors.canvas} stopOpacity={0} />
+            <Stop offset="0" stopColor={fixed.white} stopOpacity={0.55} />
+            <Stop offset="1" stopColor={fixed.white} stopOpacity={0} />
           </RadialGradient>
         </Defs>
         <Circle cx={50} cy={50} r={50} fill={colors[color]} />
@@ -156,8 +157,8 @@ function Ball({ color, size, logo }: Pick<BallSpec, 'color' | 'size' | 'logo'>) 
       <Svg width={size} height={size} viewBox="0 0 100 100" style={StyleSheet.absoluteFill}>
         <Defs>
           <RadialGradient id={`${id}spot`} cx="30%" cy="22%" r="26%">
-            <Stop offset="0" stopColor={colors.canvas} stopOpacity={0.7} />
-            <Stop offset="1" stopColor={colors.canvas} stopOpacity={0} />
+            <Stop offset="0" stopColor={fixed.white} stopOpacity={0.7} />
+            <Stop offset="1" stopColor={fixed.white} stopOpacity={0} />
           </RadialGradient>
         </Defs>
         <Circle cx={50} cy={50} r={50} fill={`url(#${id}spot)`} />
@@ -166,10 +167,10 @@ function Ball({ color, size, logo }: Pick<BallSpec, 'color' | 'size' | 'logo'>) 
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   ball: { position: 'absolute', top: 0 },
   logo: { position: 'absolute' },
   reliefShade: { opacity: 0.38 },
   reliefLight: { opacity: 0.65 },
   faceWhite: { opacity: 0.92 },
-});
+}));

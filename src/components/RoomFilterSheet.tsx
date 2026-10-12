@@ -1,8 +1,9 @@
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { RoomFilter } from '../domain/filter';
 import { BUILDINGS, EQUIPMENT } from '../domain/types';
+import { themed } from '../theme/themed';
 import { colors, radius, spacing } from '../theme/tokens';
 import { AppText } from './AppText';
 import { Button } from './Button';
@@ -89,7 +90,7 @@ function Group({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   scrim: { flex: 1, backgroundColor: colors.scrim },
   sheet: {
     maxHeight: '80%',
@@ -120,4 +121,4 @@ const styles = StyleSheet.create({
     borderTopColor: colors.hairline,
   },
   grow: { flex: 1 },
-});
+}));

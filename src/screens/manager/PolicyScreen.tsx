@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Chip } from '../../components/Chip';
@@ -9,6 +9,7 @@ import { generateSlots } from '../../domain/slots';
 import { formatDuration, parseTime } from '../../domain/time';
 import { useCanAct } from '../../hooks/usePresence';
 import { usePolicyStore } from '../../store/usePolicyStore';
+import { themed } from '../../theme/themed';
 import { colors, radius, spacing, type ColorToken } from '../../theme/tokens';
 
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -199,7 +200,7 @@ function StepButton({ icon, label, disabled, onPress }: { icon: 'add' | 'remove'
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   screen: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.lg, gap: spacing.lg },
   grow: { flex: 1 },
@@ -232,4 +233,4 @@ const styles = StyleSheet.create({
   preview: { gap: spacing.base, padding: spacing.base },
   slotRow: { gap: spacing.sm },
   slot: { paddingVertical: spacing.xs + spacing.xxs, paddingHorizontal: spacing.md, borderRadius: radius.full, backgroundColor: colors.successSoft },
-});
+}));

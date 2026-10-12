@@ -2,13 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { Animated, Easing, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, Easing, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '../../components/AppText';
 import { Avatar } from '../../components/Avatar';
 import { Button } from '../../components/Button';
 import { FloatingBalls } from '../../components/FloatingBalls';
+import { PreferencesBar } from '../../components/PreferencesBar';
 import { ROLE_LABEL } from '../../components/labels';
 import { TextField } from '../../components/TextField';
 import { DEMO_PASSWORD, SEED_USERS } from '../../data/seed';
@@ -16,6 +17,7 @@ import { useEntrance } from '../../hooks/useEntrance';
 import type { AuthStackParams } from '../../navigation/types';
 import { useAccountStore } from '../../store/useAccountStore';
 import { useBookingStore } from '../../store/useBookingStore';
+import { themed } from '../../theme/themed';
 import { colors, radius, shadow, spacing } from '../../theme/tokens';
 import { USE_NATIVE_DRIVER } from '../../theme/motion';
 
@@ -64,6 +66,7 @@ export function LoginScreen({ navigation }: NativeStackScreenProps<AuthStackPara
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}
       >
+        <PreferencesBar />
         <Animated.View style={[styles.glass, frosted, shadow, entrance(0)]}>
           <View style={styles.heading}>
             <Image source={LOGO} contentFit="contain" accessibilityLabel="VKU" style={styles.logo} />
@@ -136,7 +139,7 @@ export function LoginScreen({ navigation }: NativeStackScreenProps<AuthStackPara
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   flex: { flex: 1, backgroundColor: colors.primarySoft },
   content: { flexGrow: 1, justifyContent: 'center', gap: spacing.base, paddingHorizontal: spacing.lg },
   glass: {
@@ -169,4 +172,4 @@ const styles = StyleSheet.create({
   demoRowFilled: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   demoRowPressed: { backgroundColor: colors.surfaceSoft },
   demoText: { flex: 1, gap: spacing.xxs },
-});
+}));

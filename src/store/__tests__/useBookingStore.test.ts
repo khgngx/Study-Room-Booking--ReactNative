@@ -72,6 +72,11 @@ describe('createBooking', () => {
     expect(await book(roomA.id, tomorrow, { startMinutes: 14 * 60 + 39, endMinutes: 15 * 60 + 30 })).toMatchObject({ ok: true });
   });
 
+  it('accepts a booking 30 days ahead and refuses one a day further', async () => {
+    expect(await book(roomA.id, toDateKey(addDays(NOW, 30)))).toMatchObject({ ok: true });
+    expect(await book(roomB.id, toDateKey(addDays(NOW, 31)))).toEqual({ ok: false, reason: 'too_far' });
+  });
+
   it('refuses custom times that break the booking rules', async () => {
     expect(await book(roomA.id, tomorrow, { startMinutes: 11 * 60, endMinutes: 13 * 60 + 30 })).toEqual({ ok: false, reason: 'too_long' });
     expect(await book(roomA.id, tomorrow, { startMinutes: 11 * 60, endMinutes: 12 * 60 })).toEqual({ ok: false, reason: 'outside_hours' });

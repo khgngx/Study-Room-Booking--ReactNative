@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
@@ -21,6 +21,7 @@ import { useAccountStore } from '../../store/useAccountStore';
 import { useBookingStore, useCurrentUser } from '../../store/useBookingStore';
 import { usePolicyStore } from '../../store/usePolicyStore';
 import { useRoomStore } from '../../store/useRoomStore';
+import { themed } from '../../theme/themed';
 import { colors, radius, spacing, type ColorToken } from '../../theme/tokens';
 
 const RANGE_OPTIONS = [7, 14, 30];
@@ -189,7 +190,7 @@ function Panel({ title, note, children }: { title: string; note?: string; childr
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   content: { gap: spacing.base },
   ranges: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   hero: { gap: spacing.xs, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.primaryActive },
@@ -211,4 +212,4 @@ const styles = StyleSheet.create({
   exportIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radius.full, backgroundColor: colors.canvas },
   exportText: { flex: 1, gap: spacing.xs },
   exportButton: { alignSelf: 'flex-start', marginTop: spacing.sm },
-});
+}));

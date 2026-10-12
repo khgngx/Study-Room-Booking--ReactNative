@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+import { translate } from '../i18n';
 import { dateFromKey, formatRange } from '../domain/time';
 import type { Booking, Room } from '../domain/types';
 
@@ -23,7 +24,7 @@ async function ensurePermission(): Promise<boolean> {
   if (!supported) return false;
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-      name: 'Nhắc giờ check-in',
+      name: translate('Nhắc giờ check-in'),
       importance: Notifications.AndroidImportance.HIGH,
     });
   }
@@ -47,8 +48,8 @@ export async function scheduleCheckInReminder(
   if (!(await ensurePermission())) return null;
   return Notifications.scheduleNotificationAsync({
     content: {
-      title: `Sắp đến giờ check-in phòng ${room.code}`,
-      body: `Ca ${formatRange(booking.startMinutes, booking.endMinutes)} bắt đầu sau ${minutesBefore} phút. Mở mã QR để check-in.`,
+      title: translate(`Sắp đến giờ check-in phòng ${room.code}`),
+      body: translate(`Ca ${formatRange(booking.startMinutes, booking.endMinutes)} bắt đầu sau ${minutesBefore} phút. Mở mã QR để check-in.`),
       data: { bookingId: booking.id },
     },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt, channelId: CHANNEL_ID },
@@ -64,7 +65,7 @@ export async function cancelReminder(notificationId: string | undefined): Promis
 export async function sendTestReminder(seconds = 10): Promise<boolean> {
   if (!(await ensurePermission())) return false;
   await Notifications.scheduleNotificationAsync({
-    content: { title: 'Sắp đến giờ check-in phòng A101', body: 'Đây là thông báo thử.' },
+    content: { title: translate('Sắp đến giờ check-in phòng A101'), body: translate('Đây là thông báo thử.') },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds, channelId: CHANNEL_ID },
   });
   return true;

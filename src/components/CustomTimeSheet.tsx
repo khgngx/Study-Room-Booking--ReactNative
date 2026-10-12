@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { MinuteRange } from '../domain/conflict';
 import { formatDuration, formatMinutes, formatRange, formatTimeEntry, resolveTimeInput } from '../domain/time';
+import { themed } from '../theme/themed';
 import { colors, radius, spacing } from '../theme/tokens';
 import { AppText } from './AppText';
 import { Button } from './Button';
@@ -96,7 +97,7 @@ function TimeField({ label, value, onChange, placeholder }: { label: string; val
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   fill: { flex: 1 },
   scrim: { flex: 1, backgroundColor: colors.scrim },
   sheet: {
@@ -112,4 +113,4 @@ const styles = StyleSheet.create({
   fields: { flexDirection: 'row', gap: spacing.base },
   field: { flex: 1 },
   status: { minHeight: 40, justifyContent: 'center' },
-});
+}));

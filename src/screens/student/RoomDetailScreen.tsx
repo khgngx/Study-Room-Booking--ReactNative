@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Image } from 'expo-image';
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
-import { DateStrip } from '../../components/DateStrip';
+import { CalendarButton, DateNavigator } from '../../components/DateNavigator';
+import { PresencePill } from '../../components/PresencePill';
 import { CustomTimeSheet } from '../../components/CustomTimeSheet';
 import { DaySchedule, scheduleOffset, type ScheduleBooking } from '../../components/DaySchedule';
 import { Hatch } from '../../components/Hatch';
@@ -20,6 +21,7 @@ import { getRoomDayStatus } from '../../components/roomDayStatus';
 import { PillBadge } from '../../components/StatusBadge';
 import {
   countRemainingBookings,
+  BOOKING_HORIZON_DAYS,
   getSlotAvailability,
   isActive,
   MIN_BOOKING_MINUTES,
@@ -43,11 +45,11 @@ import { useAccountStore } from '../../store/useAccountStore';
 import { useBookingStore, type CreateBookingResult } from '../../store/useBookingStore';
 import { usePolicyStore } from '../../store/usePolicyStore';
 import { useRoomStore } from '../../store/useRoomStore';
+import { themed } from '../../theme/themed';
 import { colors, radius, spacing } from '../../theme/tokens';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
-const DAYS_AHEAD = 7;
 
 type BookingFailure = Extract<CreateBookingResult, { ok: false }>['reason'];
 
@@ -71,6 +73,8 @@ function failureMessage(reason: BookingFailure, policy: Policy): string {
       return `Mỗi ca cần ít nhất ${MIN_BOOKING_MINUTES} phút và giờ kết thúc phải sau giờ bắt đầu.`;
     case 'too_long':
       return `Mỗi ca tối đa ${formatDuration(policy.slotMinutes)}.`;
+    case 'too_far':
+      return `Chỉ đặt trước được tối đa ${BOOKING_HORIZON_DAYS} ngày.`;
     case 'outside_hours':
       return `Chỉ đặt được trọn trong một khoảng mở cửa: ${formatOpeningHours(policy)}.`;
     case 'forbidden':
@@ -97,7 +101,7 @@ export function RoomDetailScreen({ navigation, route }: NativeStackScreenProps<E
   const now = useNow();
   const canAct = useCanAct();
 
-  const dateKeys = useMemo(() => nextDateKeys(now, DAYS_AHEAD), [now]);
+  const dateKeys = useMemo(() => nextDateKeys(now, BOOKING_HORIZON_DAYS + 1), [now]);
   const [pickedDate, setPickedDate] = useState(route.params.dateKey ?? dateKeys[0]);
   // If the app stays open past midnight the picked day can fall off the strip.
   const dateKey = dateKeys.includes(pickedDate) ? pickedDate : dateKeys[0];
@@ -112,7 +116,24 @@ export function RoomDetailScreen({ navigation, route }: NativeStackScreenProps<E
   const scheduleTop = useRef({ section: 0, schedule: 0 });
 
   const roomName = room?.name ?? '';
-  useLayoutEffect(() => navigation.setOptions({ title: roomName }), [navigation, roomName]);
+  const changeDate = useCallback((next: string) => {
+    setPickedDate(next);
+    setSelections([]);
+  }, []);
+  // The calendar joins the presence pill in the stack header, as it does on the tab roots.
+  useLayoutEffect(
+    () =>
+      navigation.setOptions({
+        title: roomName,
+        headerRight: () => (
+          <View style={styles.headerActions}>
+            <CalendarButton dateKeys={dateKeys} selected={dateKey} onSelect={changeDate} />
+            <PresencePill />
+          </View>
+        ),
+      }),
+    [navigation, roomName, dateKeys, dateKey, changeDate],
+  );
 
   const nowMinutes = isToday ? minutesOfDay(now) : null;
   const slots = useMemo(() => generateSlots(policy), [policy]);
@@ -254,13 +275,10 @@ export function RoomDetailScreen({ navigation, route }: NativeStackScreenProps<E
 
   return (
     <View style={styles.screen}>
-      <DateStrip
+      <DateNavigator
         dateKeys={dateKeys}
         selected={dateKey}
-        onSelect={(next) => {
-          setPickedDate(next);
-          setSelections([]);
-        }}
+        onSelect={changeDate}
       />
       <Divider />
       <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll}>
@@ -415,8 +433,9 @@ function Legend({ label, swatch, hatched = false }: { label: string; swatch: obj
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   screen: { flex: 1, backgroundColor: colors.canvas },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   scroll: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
   section: { paddingTop: spacing.lg, gap: spacing.md },
   grow: { flex: 1 },
@@ -467,4 +486,4 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     backgroundColor: colors.primarySoft,
   },
-});
+}));

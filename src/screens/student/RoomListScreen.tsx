@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useDeferredValue, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, View, type ListRenderItem } from 'react-native';
+import { FlatList, Pressable, ScrollView, View, type ListRenderItem } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
 import { Chip } from '../../components/Chip';
-import { DateStrip } from '../../components/DateStrip';
-import { ROOM_TYPE_LABEL } from '../../components/labels';
-import { Divider, EmptyState, Screen } from '../../components/Layout';
+import { CalendarButton, DateNavigator } from '../../components/DateNavigator';
+import { GREETING, ROOM_TYPE_LABEL } from '../../components/labels';
+import { EmptyState, Screen } from '../../components/Layout';
 import { ROOM_CARD_ROW_HEIGHT, ROOM_CARD_TIMELINE_INSET, RoomCard } from '../../components/RoomCard';
 import { getRoomDayStatus, type RoomDayStatus } from '../../components/roomDayStatus';
 import { RoomFilterSheet } from '../../components/RoomFilterSheet';
@@ -16,7 +16,8 @@ import { TimelineAxis } from '../../components/RoomTimeline';
 import { SearchBar } from '../../components/SearchBar';
 import { countAdvancedFilters, EMPTY_FILTER, filterRooms, type RoomFilter } from '../../domain/filter';
 import { generateSlots } from '../../domain/slots';
-import { formatDateKey, formatMinutes, minutesOfDay, nextDateKeys } from '../../domain/time';
+import { BOOKING_HORIZON_DAYS } from '../../domain/conflict';
+import { dayPart, formatDateKey, formatMinutes, minutesOfDay, nextDateKeys } from '../../domain/time';
 import { getDayRange, getDaySegments, type DaySegments } from '../../domain/timeline';
 import { ROOM_TYPES, type Room } from '../../domain/types';
 import { useNow } from '../../hooks/useNow';
@@ -24,9 +25,9 @@ import type { ExploreStackParams } from '../../navigation/types';
 import { useBookingStore } from '../../store/useBookingStore';
 import { usePolicyStore } from '../../store/usePolicyStore';
 import { useRoomStore } from '../../store/useRoomStore';
+import { themed } from '../../theme/themed';
 import { colors, radius, spacing } from '../../theme/tokens';
 
-const DAYS_AHEAD = 7;
 const LIST_TOP_PADDING = spacing.xs;
 
 interface RoomRow extends RoomDayStatus {
@@ -39,7 +40,7 @@ export function RoomListScreen({ navigation }: NativeStackScreenProps<ExploreSta
   const policy = usePolicyStore((state) => state.policy);
   const now = useNow();
 
-  const dateKeys = useMemo(() => nextDateKeys(now, DAYS_AHEAD), [now]);
+  const dateKeys = useMemo(() => nextDateKeys(now, BOOKING_HORIZON_DAYS + 1), [now]);
   const [pickedDate, setPickedDate] = useState(dateKeys[0]);
   const dateKey = dateKeys.includes(pickedDate) ? pickedDate : dateKeys[0];
   const isToday = dateKey === dateKeys[0];
@@ -73,13 +74,13 @@ export function RoomListScreen({ navigation }: NativeStackScreenProps<ExploreSta
   const openCount = rooms.filter((room) => rowByRoom[room.id]?.open).length;
   const summary = isToday
     ? `${openCount} trên ${rooms.length} phòng đang trống lúc ${formatMinutes(minutesOfDay(now))}.`
-    : `${openCount} trên ${rooms.length} phòng còn khung giờ trống ${formatDateKey(dateKey)}.`;
+    : `${openCount} trên ${rooms.length} phòng còn khung giờ trống.`;
   const nowMinutes = isToday ? minutesOfDay(now) : null;
   const advancedCount = countAdvancedFilters(filter);
 
   const openRoom = useCallback((roomId: string) => navigation.navigate('RoomDetail', { roomId, dateKey }), [navigation, dateKey]);
   const renderItem = useCallback<ListRenderItem<Room>>(
-    ({ item, index }) => {
+    ({ item }) => {
       const row = rowByRoom[item.id];
       return (
         <RoomCard
@@ -89,13 +90,11 @@ export function RoomListScreen({ navigation }: NativeStackScreenProps<ExploreSta
           range={range}
           segments={row.segments}
           nowMinutes={nowMinutes}
-          isFirst={index === 0}
-          isLast={index === visibleRooms.length - 1}
           onPress={openRoom}
         />
       );
     },
-    [rowByRoom, range, nowMinutes, openRoom, visibleRooms.length],
+    [rowByRoom, range, nowMinutes, openRoom],
   );
   const getItemLayout = useCallback(
     (_: unknown, index: number) => ({ length: ROOM_CARD_ROW_HEIGHT, offset: LIST_TOP_PADDING + ROOM_CARD_ROW_HEIGHT * index, index }),
@@ -113,14 +112,19 @@ export function RoomListScreen({ navigation }: NativeStackScreenProps<ExploreSta
   };
 
   return (
-    <Screen title="Đặt phòng">
-      <DateStrip dateKeys={dateKeys} selected={dateKey} onSelect={setPickedDate} />
-      <Divider />
+    <Screen
+      title={GREETING[dayPart(now)]}
+      headerAction={<CalendarButton dateKeys={dateKeys} selected={dateKey} onSelect={setPickedDate} />}
+    >
+      <DateNavigator dateKeys={dateKeys} selected={dateKey} onSelect={setPickedDate} />
 
       <View style={styles.summaryRow}>
-        <AppText variant="titleMd" style={styles.grow}>
-          {summary}
-        </AppText>
+        <View style={styles.summaryText}>
+          <AppText variant="titleMd">{isToday ? 'Hôm nay' : formatDateKey(dateKey)}</AppText>
+          <AppText variant="bodySm" color="muted">
+            {summary}
+          </AppText>
+        </View>
         <IconButton icon={searchOpen ? 'close' : 'search'} label={searchOpen ? 'Đóng tìm kiếm' : 'Tìm phòng'} onPress={searchOpen ? closeSearch : () => setSearchOpen(true)} />
         <IconButton icon="options-outline" label={`Bộ lọc, đang bật ${advancedCount}`} badge={advancedCount} onPress={() => setSheetOpen(true)} />
       </View>
@@ -219,8 +223,8 @@ function IconButton({ icon, label, badge = 0, onPress }: IconButtonProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  grow: { flex: 1 },
+const styles = themed(() => ({
+  summaryText: { flex: 1, gap: spacing.xxs },
   summaryRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -257,4 +261,4 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: colors.ink,
   },
-});
+}));

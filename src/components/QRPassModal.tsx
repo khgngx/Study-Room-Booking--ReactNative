@@ -1,11 +1,12 @@
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { encodeBookingQr } from '../domain/checkin';
 import { formatDateKey, formatRange } from '../domain/time';
 import type { Booking, Room } from '../domain/types';
-import { colors, radius, spacing } from '../theme/tokens';
+import { themed } from '../theme/themed';
+import { colors, fixed, radius, spacing } from '../theme/tokens';
 import { AppText } from './AppText';
 import { Button } from './Button';
 
@@ -29,7 +30,7 @@ export function QRPassModal({ booking, room, onClose }: QRPassModalProps) {
             Đưa mã này cho nhân viên trực ca để xác nhận.
           </AppText>
           <View style={styles.qr}>
-            <QRCode value={encodeBookingQr(booking)} size={200} color={colors.ink} backgroundColor={colors.canvas} />
+            <QRCode value={encodeBookingQr(booking)} size={200} color={fixed.black} backgroundColor={fixed.white} />
           </View>
           <AppText variant="displaySm" style={styles.subtitle}>
             {room ? `${room.code} · ${room.name}` : 'Phòng đã bị xoá'}
@@ -52,7 +53,7 @@ export function QRPassModal({ booking, room, onClose }: QRPassModalProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   scrim: { flex: 1, backgroundColor: colors.scrim },
   sheet: {
     alignItems: 'center',
@@ -74,4 +75,4 @@ const styles = StyleSheet.create({
   },
   codeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md },
   done: { alignSelf: 'stretch', marginTop: spacing.lg },
-});
+}));

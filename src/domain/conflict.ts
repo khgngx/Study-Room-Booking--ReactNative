@@ -1,4 +1,4 @@
-import { dateFromKey, parseTime } from './time';
+import { addDays, dateFromKey, parseTime, toDateKey } from './time';
 import type { Booking, Policy, Room, Slot } from './types';
 
 export type SlotAvailability =
@@ -58,6 +58,14 @@ export function countRemainingBookings(input: Pick<AvailabilityInput, 'dateKey' 
   const { dateKey, bookings, userId, policy } = input;
   const held = bookings.filter((booking) => booking.userId === userId && booking.dateKey === dateKey && isActive(booking)).length;
   return Math.max(0, policy.maxBookingsPerDay - held);
+}
+
+/** Rooms can be reserved from today up to this many days ahead. */
+export const BOOKING_HORIZON_DAYS = 30;
+
+/** Date keys sort like dates, so the horizon is a plain string comparison. */
+export function isWithinBookingHorizon(dateKey: string, now: Date): boolean {
+  return dateKey <= toDateKey(addDays(now, BOOKING_HORIZON_DAYS));
 }
 
 /** Shortest stretch worth holding a room for. */

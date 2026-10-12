@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
 import { resolveImage } from '../services/images';
+import { themed } from '../theme/themed';
 import { colors, fonts, radius } from '../theme/tokens';
 import { AppText } from './AppText';
 import { initials } from './labels';
@@ -29,6 +30,6 @@ export function Avatar({ name, imageUrl, size = 40 }: AvatarProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   avatar: { alignItems: 'center', justifyContent: 'center', borderRadius: radius.full, overflow: 'hidden', backgroundColor: colors.primary },
-});
+}));

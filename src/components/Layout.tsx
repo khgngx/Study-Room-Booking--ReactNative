@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCanAct } from '../hooks/usePresence';
+import { themed } from '../theme/themed';
 import { colors, spacing } from '../theme/tokens';
 import { AppText } from './AppText';
+import { PreferencesBar } from './PreferencesBar';
 import { PresencePill } from './PresencePill';
 
 export function Divider() {
@@ -34,7 +36,7 @@ export function EmptyState({ icon, title, message, action }: EmptyStateProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   divider: { height: 1, backgroundColor: colors.hairline },
   empty: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxl, paddingHorizontal: spacing.lg },
   center: { textAlign: 'center' },
@@ -62,28 +64,44 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceSoft,
   },
   headerText: { flex: 1 },
-});
+  // On a wide header this group takes the same share as the title, which is what centres the controls between them.
+  headerActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.sm },
+}));
 
 interface ScreenProps {
   title: string;
   subtitle?: string;
   action?: ReactNode;
+  /** A compact control shown in the title row, just left of the presence pill. */
+  headerAction?: ReactNode;
   /** Set when a stack header above already handles the safe area and the presence pill. */
   nested?: boolean;
   children: ReactNode;
 }
 
-/** Screen scaffold: `display-xl` title with the presence pill top-right, then a subtitle/action row. */
-export function Screen({ title, subtitle, action, nested = false, children }: ScreenProps) {
+/** From this width the display controls fit in the title row. Narrower screens reach them from the profile tab. */
+const WIDE_HEADER_WIDTH = 900;
+
+/**
+ * Screen scaffold. Title row: calligraphic page title, the display controls (theme, language,
+ * web/phone frame) in the centre, then the screen's own action and the presence pill.
+ */
+export function Screen({ title, subtitle, action, headerAction, nested = false, children }: ScreenProps) {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const canAct = useCanAct();
+  const wide = width >= WIDE_HEADER_WIDTH;
   return (
     <View style={[styles.screen, !nested && { paddingTop: insets.top + spacing.base }]}>
       <View style={styles.header}>
-        <AppText variant="displayXl" accessibilityRole="header" numberOfLines={1} style={styles.headerText}>
+        <AppText variant="heading" accessibilityRole="header" numberOfLines={2} style={styles.headerText}>
           {title}
         </AppText>
-        {nested ? null : <PresencePill />}
+        {!nested && wide ? <PreferencesBar /> : null}
+        <View style={[styles.headerActions, !nested && wide && styles.headerText]}>
+          {headerAction}
+          {nested ? null : <PresencePill />}
+        </View>
       </View>
       {subtitle || action ? (
         <View style={styles.subHeader}>
@@ -111,7 +129,7 @@ export function ReadOnlyBanner() {
   );
 }
 
-export const screenStyles = StyleSheet.create({
+export const screenStyles = themed(() => ({
   content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
   section: { paddingVertical: spacing.lg, gap: spacing.md },
-});
+}));

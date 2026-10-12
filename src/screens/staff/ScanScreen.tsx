@@ -12,6 +12,7 @@ import type { Booking, Room, User } from '../../domain/types';
 import { useAccountStore } from '../../store/useAccountStore';
 import { useBookingStore, useCurrentUser, type StaffActionResult } from '../../store/useBookingStore';
 import { useRoomStore } from '../../store/useRoomStore';
+import { themed } from '../../theme/themed';
 import { colors, radius, spacing } from '../../theme/tokens';
 
 interface Lookup {
@@ -134,7 +135,7 @@ export function ScanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => ({
   screen: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.lg, gap: spacing.lg },
   camera: { aspectRatio: 1, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surfaceStrong },
@@ -142,4 +143,4 @@ const styles = StyleSheet.create({
   center: { textAlign: 'center' },
   result: { gap: spacing.md, padding: spacing.lg, borderRadius: radius.md, borderWidth: 1, borderColor: colors.hairline },
   manual: { gap: spacing.base },
-});
+}));

@@ -1,17 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { memo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import type { DaySegments, TimeRange } from '../domain/timeline';
 import type { Room, RoomStatus } from '../domain/types';
+import { themed } from '../theme/themed';
 import { colors, radius, spacing, type ColorToken } from '../theme/tokens';
 import { AppText } from './AppText';
 import { formatLocation } from './labels';
 import { RoomCodePlate } from './RoomCodePlate';
 import { RoomTimeline } from './RoomTimeline';
 
-/** Fixed row height so the FlatList can skip measuring (getItemLayout). */
-export const ROOM_CARD_ROW_HEIGHT = 132;
+const CARD_HEIGHT = 144;
+/** Fixed row height (card plus the gap under it) so the FlatList can skip measuring (getItemLayout). */
+export const ROOM_CARD_ROW_HEIGHT = CARD_HEIGHT + spacing.md;
 /** Distance from the screen edge to the timeline bar, so the axis above can line up with it. */
 export const ROOM_CARD_TIMELINE_INSET = spacing.lg + spacing.base + 1;
 
@@ -36,20 +38,17 @@ interface RoomCardProps {
   range: TimeRange;
   segments: DaySegments;
   nowMinutes: number | null;
-  /** Rows stack into one bordered group; the outer two carry its rounded corners. */
-  isFirst: boolean;
-  isLast: boolean;
   onPress: (roomId: string) => void;
 }
 
-/** One row of the room list: door code and identity on top, availability and the day's timeline below. */
-export const RoomCard = memo(function RoomCard({ room, tone, statusLabel, range, segments, nowMinutes, isFirst, isLast, onPress }: RoomCardProps) {
+/** One card of the room list: door code and identity on top, availability and the day's timeline below. */
+export const RoomCard = memo(function RoomCard({ room, tone, statusLabel, range, segments, nowMinutes, onPress }: RoomCardProps) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${room.code}, ${room.name}, ${formatLocation(room)}, ${room.capacity} chỗ, ${statusLabel}`}
       onPress={() => onPress(room.id)}
-      style={({ pressed }) => [styles.row, isFirst && styles.first, isLast && styles.last, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
       <View style={styles.top}>
         <RoomCodePlate code={room.code} />
@@ -79,21 +78,18 @@ export const RoomCard = memo(function RoomCard({ room, tone, statusLabel, range,
   );
 });
 
-const styles = StyleSheet.create({
-  row: {
-    height: ROOM_CARD_ROW_HEIGHT,
+const styles = themed(() => ({
+  card: {
+    height: CARD_HEIGHT,
     marginHorizontal: spacing.lg,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
+    marginBottom: spacing.md,
+    padding: spacing.base,
     justifyContent: 'space-between',
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderBottomWidth: 1,
+    borderRadius: radius.lg,
+    borderWidth: 1,
     borderColor: colors.hairline,
     backgroundColor: colors.canvas,
   },
-  first: { borderTopWidth: 1, borderTopLeftRadius: radius.md, borderTopRightRadius: radius.md },
-  last: { borderBottomLeftRadius: radius.md, borderBottomRightRadius: radius.md },
   pressed: { backgroundColor: colors.surfaceSoft },
   top: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   text: { flex: 1, gap: spacing.xxs },
@@ -101,4 +97,4 @@ const styles = StyleSheet.create({
   shrink: { flexShrink: 1 },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   dot: { width: 8, height: 8, borderRadius: radius.full },
-});
+}));
