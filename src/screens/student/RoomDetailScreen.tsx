@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Image } from 'expo-image';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,9 +14,10 @@ import { Hatch } from '../../components/Hatch';
 import { EQUIPMENT_ICON, EQUIPMENT_LABEL, formatLocation, givenName, READ_ONLY_MESSAGE, ROOM_TYPE_LABEL } from '../../components/labels';
 import { Divider, EmptyState, ReadOnlyBanner } from '../../components/Layout';
 import { QRPassModal } from '../../components/QRPassModal';
-import { ROOM_TONE_COLOR, ROOM_TONE_DOT } from '../../components/RoomCard';
+import { ROOM_TONE_DOT } from '../../components/RoomCard';
 import { RoomCodePlate } from '../../components/RoomCodePlate';
 import { getRoomDayStatus } from '../../components/roomDayStatus';
+import { PillBadge } from '../../components/StatusBadge';
 import {
   countRemainingBookings,
   getSlotAvailability,
@@ -27,6 +29,7 @@ import {
   type MinuteRange,
   type SlotAvailability,
 } from '../../domain/conflict';
+import { toggleSelection } from '../../domain/selection';
 import { generateSlots } from '../../domain/slots';
 import { dateFromKey, formatDateKey, formatDuration, formatMinutes, formatRange, minutesOfDay, nextDateKeys } from '../../domain/time';
 import { getDayRange, getDaySegments, getScheduleStart, subtractRanges } from '../../domain/timeline';
@@ -35,11 +38,14 @@ import { useNow } from '../../hooks/useNow';
 import { useCanAct } from '../../hooks/usePresence';
 import type { ExploreStackParams } from '../../navigation/types';
 import { confirmDestructive, showMessage } from '../../services/dialog';
+import { resolveImage } from '../../services/images';
 import { useAccountStore } from '../../store/useAccountStore';
 import { useBookingStore, type CreateBookingResult } from '../../store/useBookingStore';
 import { usePolicyStore } from '../../store/usePolicyStore';
 import { useRoomStore } from '../../store/useRoomStore';
 import { colors, radius, spacing } from '../../theme/tokens';
+
+type IconName = keyof typeof Ionicons.glyphMap;
 
 const DAYS_AHEAD = 7;
 
@@ -138,16 +144,6 @@ export function RoomDetailScreen({ navigation, route }: NativeStackScreenProps<E
         }),
     [bookings, room?.id, dateKey, users, userId, canAct, now],
   );
-  // What is still bookable inside slots a booking only partly covers.
-  const gaps = useMemo(
-    () =>
-      slots
-        .filter((slot) => held.some((booking) => overlaps(booking, slot)))
-        .flatMap((slot) => subtractRanges(slot, held))
-        .map((gap) => ({ ...gap, startMinutes: Math.max(gap.startMinutes, nowMinutes ?? 0) }))
-        .filter((gap) => gap.endMinutes - gap.startMinutes >= MIN_BOOKING_MINUTES),
-    [slots, held, nowMinutes],
-  );
 
   if (!room) {
     return <EmptyState icon="alert-circle-outline" title="Không tìm thấy phòng" message="Phòng này có thể đã bị xoá." />;
@@ -177,16 +173,18 @@ export function RoomDetailScreen({ navigation, route }: NativeStackScreenProps<E
   const isWholeSlot = (range: MinuteRange) => slots.some((slot) => sameRange(slot, range));
   const withoutRange = (range: MinuteRange | null) => activeSelections.filter((picked) => !range || !sameRange(picked, range));
 
-  const toggleSlot = (slot: MinuteRange) => {
-    if (activeSelections.some((picked) => sameRange(picked, slot))) {
-      setSelections(withoutRange(slot));
-    } else if (activeSelections.some((picked) => overlaps(picked, slot))) {
-      showMessage('Trùng giờ đang chọn', 'Khung này trùng với một khoảng giờ bạn đã chọn. Bỏ khoảng đó trước nhé.');
-    } else if (activeSelections.length >= remaining) {
-      showMessage('Đã chọn đủ số ca', limitMessage);
-    } else {
-      setSelections([...activeSelections, slot]);
-    }
+  // What is still bookable inside slots that a booking or a custom time only partly covers.
+  const carved = [...held, ...activeSelections.filter((picked) => !isWholeSlot(picked))];
+  const gaps = slots
+    .filter((slot) => carved.some((taken) => overlaps(taken, slot)))
+    .flatMap((slot) => subtractRanges(slot, carved))
+    .map((gap) => ({ ...gap, startMinutes: Math.max(gap.startMinutes, nowMinutes ?? 0) }))
+    .filter((gap) => gap.endMinutes - gap.startMinutes >= MIN_BOOKING_MINUTES);
+
+  const toggleRange = (range: MinuteRange) => {
+    const outcome = toggleSelection(activeSelections, range, remaining);
+    if (outcome.ok) setSelections(outcome.selections);
+    else showMessage('Đã chọn đủ số ca', limitMessage);
   };
 
   /** Why a typed time cannot join the selection, or null when it can. */
@@ -267,38 +265,29 @@ export function RoomDetailScreen({ navigation, route }: NativeStackScreenProps<E
       <Divider />
       <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll}>
         <View style={styles.section}>
-          <View style={styles.plateRow}>
-            <RoomCodePlate code={room.code} size="lg" />
-            <AppText variant="caption" color="muted" style={styles.type}>
-              {ROOM_TYPE_LABEL[room.type]}
+          <View style={styles.hero}>
+            <Image source={resolveImage(room.imageUrl)} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} accessibilityLabel={`Ảnh phòng ${room.code}`} />
+            <PillBadge floating label={status.label} dotColor={colors[ROOM_TONE_DOT[status.tone]]} style={styles.heroBadge} />
+            <View style={styles.heroPlate}>
+              <RoomCodePlate code={room.code} size="lg" />
+            </View>
+          </View>
+          <View style={styles.heading}>
+            <AppText variant="microLabel" color="accentInk">
+              {ROOM_TYPE_LABEL[room.type].toUpperCase()}
+            </AppText>
+            <AppText variant="displayLg" accessibilityRole="header">
+              {room.name}
             </AppText>
           </View>
-          <View style={styles.inline}>
-            <AppText variant="titleSm">{formatLocation(room)}</AppText>
-            <View style={styles.item}>
-              <Ionicons name="people-outline" size={18} color={colors.ink} />
-              <AppText variant="titleSm">{room.capacity} chỗ</AppText>
-            </View>
+          <View style={styles.facts}>
+            <Fact icon="location-outline" label={formatLocation(room)} />
+            <Fact icon="people-outline" label={`${room.capacity} chỗ`} />
+            {room.equipment.map((item) => (
+              <Fact key={item} icon={EQUIPMENT_ICON[item]} label={EQUIPMENT_LABEL[item]} />
+            ))}
           </View>
           {room.description ? <AppText color="body">{room.description}</AppText> : null}
-          {room.equipment.length > 0 ? (
-            <View style={styles.inline}>
-              {room.equipment.map((item) => (
-                <View key={item} style={styles.item}>
-                  <Ionicons name={EQUIPMENT_ICON[item]} size={18} color={colors.muted} />
-                  <AppText variant="bodySm" color="muted">
-                    {EQUIPMENT_LABEL[item]}
-                  </AppText>
-                </View>
-              ))}
-            </View>
-          ) : null}
-          <View style={styles.item}>
-            <View style={[styles.dot, { backgroundColor: colors[ROOM_TONE_DOT[status.tone]] }]} />
-            <AppText variant="caption" color={ROOM_TONE_COLOR[status.tone]}>
-              {status.label}
-            </AppText>
-          </View>
         </View>
 
         {room.underMaintenance ? (
@@ -307,8 +296,25 @@ export function RoomDetailScreen({ navigation, route }: NativeStackScreenProps<E
           <EmptyState icon="time-outline" title="Chưa mở khung giờ" message="Phòng chưa có khung giờ nào để đặt." />
         ) : (
           <View style={styles.section} onLayout={(event) => (scheduleTop.current.section = event.nativeEvent.layout.y)}>
-            <View style={styles.inline}>
+            <View style={styles.sectionHeader}>
+              <AppText variant="displaySm" accessibilityRole="header" style={styles.grow}>
+                Chọn khung giờ
+              </AppText>
+              <View style={styles.quota}>
+                <AppText variant="caption" color="successInk">
+                  Còn {remaining - activeSelections.length}/{policy.maxBookingsPerDay} ca
+                </AppText>
+              </View>
+            </View>
+            <View style={styles.tip}>
+              <Ionicons name="bulb-outline" size={18} color={colors.accentInk} />
+              <AppText variant="captionSm" color="body" style={styles.grow}>
+                Chạm một khung để chọn, chạm lần nữa để bỏ. {Platform.OS === 'web' ? 'Nhấn giữ hoặc chuột phải' : 'Nhấn giữ'} để tự chỉnh giờ bắt đầu và kết thúc. Chạm vào ca của bạn để huỷ.
+              </AppText>
+            </View>
+            <View style={styles.legend}>
               <Legend label="Trống" swatch={styles.swatchFree} />
+              <Legend label="Đang chọn" swatch={styles.swatchSelected} />
               <Legend label="Của bạn" swatch={styles.swatchMine} />
               <Legend label="Đã đặt" swatch={styles.swatchBooked} />
               <Legend label="Ngoài giờ" swatch={styles.swatchClosed} hatched />
@@ -318,9 +324,6 @@ export function RoomDetailScreen({ navigation, route }: NativeStackScreenProps<E
                 Đã ẩn các khung trước {formatMinutes(scheduleStart)} vì đã qua.
               </AppText>
             ) : null}
-            <AppText variant="captionSm" color="muted">
-              Chạm để chọn hoặc bỏ từng ca, chọn được nhiều ca cùng lúc. Chạm vào ca của bạn để huỷ. {Platform.OS === 'web' ? 'Nhấn giữ hoặc chuột phải' : 'Nhấn giữ'} để tự chỉnh giờ bắt đầu và kết thúc.
-            </AppText>
             <View onLayout={(event) => (scheduleTop.current.schedule = event.nativeEvent.layout.y)}>
               <DaySchedule
                 range={{ startMinutes: scheduleStart, endMinutes: dayRange.endMinutes }}
@@ -331,7 +334,7 @@ export function RoomDetailScreen({ navigation, route }: NativeStackScreenProps<E
                 closed={getDaySegments(room, bookings, dateKey, policy).closed}
                 selections={activeSelections}
                 nowMinutes={nowMinutes}
-                onSelect={toggleSlot}
+                onSelect={toggleRange}
                 onCustomize={openCustomizer}
                 onCancelBooking={confirmCancel}
               />
@@ -355,19 +358,21 @@ export function RoomDetailScreen({ navigation, route }: NativeStackScreenProps<E
                 onPress={() => setSelections(withoutRange(picked))}
                 style={styles.pick}
               >
-                <AppText variant="caption">{formatRange(picked.startMinutes, picked.endMinutes)}</AppText>
-                <Ionicons name="close" size={14} color={colors.ink} />
+                <AppText variant="caption" color="primaryActive">
+                  {formatRange(picked.startMinutes, picked.endMinutes)}
+                </AppText>
+                <Ionicons name="close" size={14} color={colors.primaryActive} />
               </Pressable>
             ))}
           </ScrollView>
         ) : null}
         <View style={styles.barRow}>
           <View style={styles.barText}>
-            <AppText variant="titleMd">
+            <AppText variant="titleMd" numberOfLines={1}>
               {activeSelections.length > 0 ? `${activeSelections.length} ca · ${formatDuration(selectedMinutes)}` : 'Chưa chọn khung giờ'}
             </AppText>
-            <AppText variant="bodySm" color="muted">
-              {formatDateKey(dateKey)} · còn chọn được {remaining - activeSelections.length} ca
+            <AppText variant="bodySm" color="muted" numberOfLines={1}>
+              {formatDateKey(dateKey)}
             </AppText>
           </View>
           <Button
@@ -390,6 +395,15 @@ export function RoomDetailScreen({ navigation, route }: NativeStackScreenProps<E
   );
 }
 
+function Fact({ icon, label }: { icon: IconName; label: string }) {
+  return (
+    <View style={styles.fact}>
+      <Ionicons name={icon} size={16} color={colors.ink} />
+      <AppText variant="caption">{label}</AppText>
+    </View>
+  );
+}
+
 function Legend({ label, swatch, hatched = false }: { label: string; swatch: object; hatched?: boolean }) {
   return (
     <View style={styles.item}>
@@ -405,14 +419,30 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
   scroll: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
   section: { paddingTop: spacing.lg, gap: spacing.md },
-  plateRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md },
-  type: { paddingBottom: spacing.sm },
-  inline: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: spacing.base, rowGap: spacing.sm },
+  grow: { flex: 1 },
+  hero: { height: 184, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.surfaceStrong },
+  heroBadge: { position: 'absolute', top: spacing.md, left: spacing.md, maxWidth: '80%' },
+  heroPlate: { position: 'absolute', left: spacing.md, bottom: spacing.md },
+  heading: { gap: spacing.xs },
+  facts: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  fact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs + spacing.xxs,
+    paddingVertical: spacing.xs + spacing.xxs,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceSoft,
+  },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  quota: { paddingVertical: spacing.xs, paddingHorizontal: spacing.md, borderRadius: radius.full, backgroundColor: colors.successSoft },
+  tip: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.accentSoft },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: spacing.base, rowGap: spacing.sm },
   item: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + spacing.xxs },
-  dot: { width: 8, height: 8, borderRadius: radius.full },
   swatch: { width: 16, height: 16, borderRadius: radius.xs, borderWidth: 1, borderColor: 'transparent', overflow: 'hidden' },
-  swatchFree: { borderColor: colors.borderStrong, backgroundColor: colors.canvas },
-  swatchMine: { backgroundColor: colors.primaryActive },
+  swatchFree: { borderColor: colors.success, backgroundColor: colors.successSoft },
+  swatchSelected: { backgroundColor: colors.primaryActive },
+  swatchMine: { backgroundColor: colors.successInk },
   swatchBooked: { backgroundColor: colors.surfaceStrong, borderColor: colors.hairline },
   swatchClosed: { backgroundColor: colors.surfaceSoft },
   bar: {
@@ -434,7 +464,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.canvas,
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
   },
 });

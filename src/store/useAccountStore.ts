@@ -12,6 +12,8 @@ interface AccountState {
   authenticate: (email: string, password: string) => User | null;
   register: (input: { name: string; email: string; password: string; studentId: string }) => RegisterResult;
   updateProfile: (id: string, changes: Pick<User, 'name' | 'studentId'>) => void;
+  /** Pass undefined to go back to the initials. */
+  setAvatar: (id: string, avatarUrl: string | undefined) => void;
   setPresence: (id: string, presence: Presence) => void;
   setRole: (id: string, role: UserRole) => void;
   setAssignedBuildings: (id: string, buildings: Building[]) => void;
@@ -42,6 +44,8 @@ export const useAccountStore = create<AccountState>()(
       },
       updateProfile: (id, changes) =>
         set((state) => ({ users: state.users.map((user) => (user.id === id ? { ...user, ...changes } : user)) })),
+      setAvatar: (id, avatarUrl) =>
+        set((state) => ({ users: state.users.map((user) => (user.id === id ? { ...user, avatarUrl } : user)) })),
       setPresence: (id, presence) =>
         set((state) => ({ users: state.users.map((user) => (user.id === id ? { ...user, presence } : user)) })),
       setRole: (id, role) =>

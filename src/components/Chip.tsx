@@ -25,8 +25,8 @@ export const Chip = memo(function Chip({ label, selected, onPress, icon, disable
       accessibilityRole={toggle ? 'switch' : 'button'}
       style={[styles.chip, selected && (on ? styles.toggledOn : styles.selected), disabled && styles.disabled]}
     >
-      {icon ? <Ionicons name={icon} size={16} color={on ? colors.onPrimary : colors.ink} /> : null}
-      <AppText variant="buttonSm" color={on ? 'onPrimary' : 'ink'}>
+      {icon ? <Ionicons name={icon} size={16} color={on ? colors.onPrimary : selected ? colors.primaryActive : colors.ink} /> : null}
+      <AppText variant="buttonSm" color={on ? 'onPrimary' : selected ? 'primaryActive' : 'ink'}>
         {label}
       </AppText>
     </Pressable>
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     borderColor: colors.hairline,
     backgroundColor: colors.canvas,
   },
-  selected: { borderColor: colors.ink, backgroundColor: colors.surfaceSoft },
+  selected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   toggledOn: { borderColor: colors.successInk, backgroundColor: colors.successInk },
   disabled: { opacity: 0.4 },
 });

@@ -10,7 +10,7 @@ interface DateStripProps {
   onSelect: (dateKey: string) => void;
 }
 
-/** A week of day tiles spread across the screen: ink fill when selected, a dot under today. */
+/** A week of day tiles spread across the screen: Rausch fill when selected, a dot under today. */
 export function DateStrip({ dateKeys, selected, onSelect }: DateStripProps) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.strip} contentContainerStyle={styles.row}>
@@ -26,13 +26,13 @@ export function DateStrip({ dateKeys, selected, onSelect }: DateStripProps) {
             onPress={() => onSelect(dateKey)}
             style={[styles.cell, isSelected && styles.cellSelected]}
           >
-            <AppText variant="captionSm" color={isSelected ? 'onDark' : 'muted'}>
+            <AppText variant="captionSm" color={isSelected ? 'onPrimary' : 'muted'}>
               {isToday ? 'Nay' : weekdayLabel(dateKey)}
             </AppText>
-            <AppText variant="displaySm" color={isSelected ? 'onDark' : 'ink'}>
+            <AppText variant="displaySm" color={isSelected ? 'onPrimary' : 'ink'}>
               {dateFromKey(dateKey).getDate()}
             </AppText>
-            <View style={[styles.todayDot, isToday && styles.todayDotOn]} />
+            <View style={[styles.todayDot, isToday && (isSelected ? styles.todayDotSelected : styles.todayDotOn)]} />
           </Pressable>
         );
       })}
@@ -53,7 +53,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xs,
     borderRadius: radius.md,
   },
-  cellSelected: { backgroundColor: colors.ink },
+  cellSelected: { backgroundColor: colors.primary },
   todayDot: { width: 4, height: 4, borderRadius: radius.full },
   todayDotOn: { backgroundColor: colors.primary },
+  todayDotSelected: { backgroundColor: colors.onPrimary },
 });

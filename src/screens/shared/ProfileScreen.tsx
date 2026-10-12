@@ -4,18 +4,21 @@ import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
+import { Avatar } from '../../components/Avatar';
+import { AvatarEditorSheet, type AvatarChange } from '../../components/AvatarEditorSheet';
 import { Button } from '../../components/Button';
-import { PRESENCE_LABEL, ROLE_LABEL } from '../../components/labels';
+import { PRESENCE_LABEL, ROLE_ICON, ROLE_LABEL } from '../../components/labels';
 import { Screen } from '../../components/Layout';
 import { PRESENCE_DOT_COLOR } from '../../components/PresencePill';
 import { TextField } from '../../components/TextField';
 import { can, receivesNotifications } from '../../domain/permissions';
 import { dateFromKey, toDateKey } from '../../domain/time';
-import type { Booking, Room, User, UserRole } from '../../domain/types';
+import type { Booking, Room, User } from '../../domain/types';
 import { useNow } from '../../hooks/useNow';
 import { useCanAct, usePresence } from '../../hooks/usePresence';
 import type { ProfileStackParams } from '../../navigation/types';
 import { showMessage } from '../../services/dialog';
+import { discardImage, storeImage } from '../../services/images';
 import { sendTestReminder } from '../../services/notifications';
 import { useAccountStore } from '../../store/useAccountStore';
 import { useBookingStore, useCurrentUser } from '../../store/useBookingStore';
@@ -26,21 +29,8 @@ type IconName = keyof typeof Ionicons.glyphMap;
 
 const AVATAR_SIZE = 88;
 const PRESENCE_DOT_SIZE = 20;
+const CAMERA_BADGE_SIZE = 28;
 const ROW_ICON_SIZE = 40;
-
-const ROLE_ICON: Record<UserRole, IconName> = {
-  student: 'school-outline',
-  lab_staff: 'construct-outline',
-  facility_manager: 'business-outline',
-};
-
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(-2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('');
 
 interface Stat {
   value: number;
@@ -82,6 +72,7 @@ type ManagementLink = { screen: 'Dashboard' | 'Users' | 'Policy'; icon: IconName
 export function ProfileScreen({ navigation }: NativeStackScreenProps<ProfileStackParams, 'Profile'>) {
   const user = useCurrentUser();
   const updateProfile = useAccountStore((state) => state.updateProfile);
+  const setAvatar = useAccountStore((state) => state.setAvatar);
   const accountCount = useAccountStore((state) => state.users.length);
   const bookings = useBookingStore((state) => state.bookings);
   const signOut = useBookingStore((state) => state.signOut);
@@ -91,12 +82,19 @@ export function ProfileScreen({ navigation }: NativeStackScreenProps<ProfileStac
   const now = useNow();
   const [name, setName] = useState(user?.name ?? '');
   const [studentId, setStudentId] = useState(user?.studentId ?? '');
+  const [editingAvatar, setEditingAvatar] = useState(false);
 
   if (!user) return null;
 
   const trimmedName = name.trim();
   const dirty = trimmedName !== user.name || studentId.trim() !== (user.studentId ?? '');
   const save = () => updateProfile(user.id, { name: trimmedName, studentId: studentId.trim() || undefined });
+
+  const applyAvatar = async (change: AvatarChange) => {
+    const next = change.kind === 'remove' ? undefined : await storeImage('avatar', change.image, change.crop);
+    setAvatar(user.id, next);
+    discardImage(user.avatarUrl);
+  };
 
   const testReminder = async () => {
     if (!receivesNotifications(user)) {
@@ -123,15 +121,24 @@ export function ProfileScreen({ navigation }: NativeStackScreenProps<ProfileStac
     <Screen title="Cá nhân">
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
         <View style={styles.hero}>
-          <View style={styles.avatar}>
-            <AppText variant="displayXl" color="onPrimary">
-              {initials(user.name)}
-            </AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Đổi ảnh đại diện"
+            accessibilityState={{ disabled: !canAct }}
+            disabled={!canAct}
+            onPress={() => setEditingAvatar(true)}
+            style={({ pressed }) => [styles.avatar, pressed && styles.avatarPressed]}
+          >
+            <Avatar name={user.name} imageUrl={user.avatarUrl} size={AVATAR_SIZE} />
             <View
               accessibilityLabel={`Trạng thái: ${PRESENCE_LABEL[presence]}`}
               style={[styles.presenceDot, { backgroundColor: PRESENCE_DOT_COLOR[presence] }]}
             />
-          </View>
+            <View style={styles.cameraBadge}>
+              <Ionicons name="camera" size={14} color={colors.onPrimary} />
+            </View>
+          </Pressable>
+          <Button label={user.avatarUrl ? 'Đổi ảnh' : 'Thêm ảnh đại diện'} variant="tertiary" onPress={() => setEditingAvatar(true)} disabled={!canAct} />
           <AppText variant="displayLg" style={styles.center}>
             {user.name}
           </AppText>
@@ -192,6 +199,13 @@ export function ProfileScreen({ navigation }: NativeStackScreenProps<ProfileStac
           <Row icon="log-out-outline" title="Đăng xuất" hint={user.email} tone="primaryActive" divided={showTestReminder} onPress={signOut} />
         </Card>
       </ScrollView>
+      <AvatarEditorSheet
+        visible={editingAvatar}
+        name={user.name}
+        currentUrl={user.avatarUrl}
+        onConfirm={applyAvatar}
+        onClose={() => setEditingAvatar(false)}
+      />
     </Screen>
   );
 }
@@ -254,19 +268,25 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     backgroundColor: colors.surfaceSoft,
   },
-  avatar: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
+  avatar: { width: AVATAR_SIZE, height: AVATAR_SIZE },
+  avatarPressed: { opacity: 0.8 },
+  cameraBadge: {
+    position: 'absolute',
+    right: -spacing.xxs,
+    bottom: -spacing.xxs,
+    width: CAMERA_BADGE_SIZE,
+    height: CAMERA_BADGE_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.sm,
     borderRadius: radius.full,
-    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.surfaceSoft,
+    backgroundColor: colors.ink,
   },
   presenceDot: {
     position: 'absolute',
     right: spacing.xxs,
-    bottom: spacing.xxs,
+    top: spacing.xxs,
     width: PRESENCE_DOT_SIZE,
     height: PRESENCE_DOT_SIZE,
     borderRadius: radius.full,

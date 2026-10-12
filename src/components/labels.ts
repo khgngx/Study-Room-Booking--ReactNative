@@ -29,6 +29,21 @@ export const formatLocation = (room: { building: string; floor: number }) => `To
 /** Given name only ("Trần Thị Bình" → "Bình"), enough to recognise a classmate on a shared schedule. */
 export const givenName = (fullName: string) => fullName.trim().split(/\s+/).pop() ?? fullName;
 
+/** Initials of the last two words ("Nguyễn Văn An" → "VA"), the stand-in for a missing avatar. */
+export const initials = (fullName: string) =>
+  fullName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(-2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+
+export const ROLE_ICON: Record<UserRole, IconName> = {
+  student: 'school-outline',
+  lab_staff: 'construct-outline',
+  facility_manager: 'business-outline',
+};
+
 export const ROOM_STATUS_LABEL: Record<RoomStatus, string> = {
   available: 'Đang trống',
   occupied: 'Đang sử dụng',
@@ -73,4 +88,11 @@ export const STAFF_ACTION_ERROR: Record<string, string> = {
   not_started: 'Chỉ đánh dấu vắng mặt sau khi ca đã bắt đầu.',
   forbidden: 'Tài khoản của bạn không có quyền thực hiện thao tác này.',
   inactive: READ_ONLY_MESSAGE,
+};
+
+export const MAINTENANCE_DENIED: Record<'forbidden' | 'out_of_area' | 'inactive' | 'room_not_found', { title: string; message: string }> = {
+  out_of_area: { title: 'Không được phân quyền', message: 'Bạn không được phân quyền bảo trì phòng này. Vui lòng chọn phòng hoặc khu khác.' },
+  forbidden: { title: 'Không được phân quyền', message: 'Tài khoản của bạn không có quyền bật tắt bảo trì.' },
+  inactive: { title: 'Đang ở chế độ chỉ xem', message: READ_ONLY_MESSAGE },
+  room_not_found: { title: 'Không tìm thấy phòng', message: 'Phòng này có thể đã bị xoá.' },
 };

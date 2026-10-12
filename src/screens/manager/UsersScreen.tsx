@@ -1,6 +1,7 @@
 import { FlatList, StyleSheet, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
+import { Avatar } from '../../components/Avatar';
 import { Chip } from '../../components/Chip';
 import { ROLE_LABEL } from '../../components/labels';
 import { Screen, screenStyles } from '../../components/Layout';
@@ -31,14 +32,19 @@ export function UsersScreen() {
           const assigned = user.assignedBuildings ?? [];
           return (
             <View style={styles.row}>
-              <AppText variant="titleMd">
-                {user.name}
-                {isSelf ? ' (bạn)' : ''}
-              </AppText>
-              <AppText variant="bodySm" color="muted">
-                {user.email}
-                {user.studentId ? ` · ${user.studentId}` : ''}
-              </AppText>
+              <View style={styles.identity}>
+                <Avatar name={user.name} imageUrl={user.avatarUrl} size={44} />
+                <View style={styles.identityText}>
+                  <AppText variant="titleMd" numberOfLines={1}>
+                    {user.name}
+                    {isSelf ? ' (bạn)' : ''}
+                  </AppText>
+                  <AppText variant="bodySm" color="muted" numberOfLines={1}>
+                    {user.email}
+                    {user.studentId ? ` · ${user.studentId}` : ''}
+                  </AppText>
+                </View>
+              </View>
               <View style={styles.chips}>
                 {ROLES.map((role) => (
                   // Changing your own role would lock you out of this screen.
@@ -79,5 +85,7 @@ export function UsersScreen() {
 const styles = StyleSheet.create({
   separator: { height: 1, backgroundColor: colors.hairlineSoft },
   row: { gap: spacing.sm, paddingVertical: spacing.base },
+  identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  identityText: { flex: 1, gap: spacing.xxs },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
 });

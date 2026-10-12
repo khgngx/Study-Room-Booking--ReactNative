@@ -1,6 +1,7 @@
 import { encodeBookingQr, parseBookingQr, validateCheckIn } from '../checkin';
-import { can, canAct, getPresence, receivesNotifications } from '../permissions';
+import { can, canAct, getMaintenanceAccess, getPresence, receivesNotifications } from '../permissions';
 import { computeStats } from '../stats';
+import type { User } from '../types';
 import { makeBooking, makeRoom } from './fixtures';
 
 const staff = { role: 'lab_staff' as const, assignedBuildings: ['A' as const] };
@@ -95,7 +96,7 @@ describe('presence', () => {
 
 describe('computeStats', () => {
   const rooms = [makeRoom(), makeRoom({ id: 'room-2', name: 'B201' })];
-  const input = { rooms, dateKeys: ['2026-10-12'], bookableMinutesPerDay: 480 };
+  const input = { rooms, dateKeys: ['2026-10-12'], bookableMinutesPerDay: 480, dayRange: { startMinutes: 420, endMinutes: 720 } };
 
   it('returns zeros without dividing by zero', () => {
     expect(computeStats({ ...input, bookings: [] })).toMatchObject({ utilization: 0, noShowRate: 0, topRooms: [] });
@@ -119,5 +120,60 @@ describe('computeStats', () => {
       ['room-1', 2],
       ['room-2', 1],
     ]);
+  });
+
+  it('breaks bookings down by day, status, building and hour', () => {
+    const bookings = [
+      makeBooking({ status: 'checked_in' }),
+      makeBooking({ id: 'b2', status: 'no_show', startMinutes: 570, endMinutes: 690 }),
+      makeBooking({ id: 'b3', roomId: 'room-2', dateKey: '2026-10-11' }),
+      makeBooking({ id: 'b4', roomId: 'room-2', status: 'cancelled' }),
+    ];
+    const stats = computeStats({
+      ...input,
+      rooms: [makeRoom(), makeRoom({ id: 'room-2', building: 'B' })],
+      dateKeys: ['2026-10-12', '2026-10-11'],
+      bookings,
+    });
+    expect(stats.daily).toEqual([
+      { dateKey: '2026-10-11', count: 1 },
+      { dateKey: '2026-10-12', count: 2 },
+    ]);
+    expect(stats.statusCounts).toEqual({ confirmed: 1, checked_in: 1, cancelled: 1, no_show: 1 });
+    expect(stats.byBuilding).toEqual([
+      { building: 'A', rooms: 1, bookings: 2, utilization: 240 / 960 },
+      { building: 'B', rooms: 1, bookings: 1, utilization: 120 / 960 },
+    ]);
+    // 07:30–09:30 twice and 09:30–11:30 once, counted in every hour they touch.
+    expect(stats.byHour).toEqual([
+      { hour: 7, count: 2 },
+      { hour: 8, count: 2 },
+      { hour: 9, count: 3 },
+      { hour: 10, count: 1 },
+      { hour: 11, count: 1 },
+    ]);
+  });
+});
+
+describe('getMaintenanceAccess', () => {
+  const roomA = makeRoom({ building: 'A' });
+  const roomC = makeRoom({ building: 'C' });
+
+  it('limits lab staff to the buildings assigned to them', () => {
+    const staff: Pick<User, 'role' | 'assignedBuildings'> = { role: 'lab_staff', assignedBuildings: ['A', 'B'] };
+    expect(getMaintenanceAccess(staff, roomA)).toBe('allowed');
+    expect(getMaintenanceAccess(staff, roomC)).toBe('out_of_area');
+    expect(getMaintenanceAccess({ role: 'lab_staff' }, roomA)).toBe('out_of_area');
+  });
+
+  it('lets a facility manager switch any room', () => {
+    expect(getMaintenanceAccess({ role: 'facility_manager' }, roomC)).toBe('allowed');
+  });
+
+  it('refuses students and anyone who is inactive', () => {
+    expect(getMaintenanceAccess({ role: 'student', assignedBuildings: ['A'] }, roomA)).toBe('forbidden');
+    expect(getMaintenanceAccess({ role: 'facility_manager', presence: 'inactive' }, roomA)).toBe('inactive');
+    // Out of area is reported first: changing status would not help.
+    expect(getMaintenanceAccess({ role: 'lab_staff', assignedBuildings: ['A'], presence: 'inactive' }, roomC)).toBe('out_of_area');
   });
 });
