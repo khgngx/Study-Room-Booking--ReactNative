@@ -10,7 +10,7 @@ import { useResolvedTheme } from './src/hooks/useResolvedTheme';
 import { useStoresHydrated } from './src/hooks/useStoresHydrated';
 import { setActiveLanguage } from './src/i18n';
 import { RootNavigator } from './src/navigation/RootNavigator';
-import { isFramedDocument } from './src/services/frame';
+import { hideFrameScrollbars, isFramedDocument } from './src/services/frame';
 import { recallNavigation, rememberNavigation } from './src/services/navigationMemory';
 import { configureNotifications } from './src/services/notifications';
 import { useBookingStore } from './src/store/useBookingStore';
@@ -45,6 +45,8 @@ export default function App() {
     window.addEventListener('storage', follow);
     return () => window.removeEventListener('storage', follow);
   }, []);
+
+  useEffect(hideFrameScrollbars, []);
 
   // Browser-drawn parts (scrollbars, form controls) follow the theme too.
   useEffect(() => {
