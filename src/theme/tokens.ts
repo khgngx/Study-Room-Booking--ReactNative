@@ -104,7 +104,7 @@ export const colors: Record<ColorToken, string> = new Proxy(light, {
 });
 
 /** Colours that must not follow the theme: a QR code stays black on white, a highlight stays white. */
-export const fixed = { white: '#ffffff', black: '#000000', shade: '#484848' } as const;
+export const fixed = { white: '#ffffff', black: '#000000', shade: '#484848', bezel: '#1b1c1f' } as const;
 
 // Page headings are set in a calligraphic hand. The intended face is Altesse, which is commercial
 // and not bundled: until its font file is added to the app, each platform falls back to the

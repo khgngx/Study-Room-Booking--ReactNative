@@ -11,6 +11,20 @@ export function isFramedDocument(): boolean {
   return Platform.OS === 'web' && new URLSearchParams(window.location.search).has(FRAME_PARAM);
 }
 
+const HIDE_SCROLLBARS_ID = 'vku-frame-scrollbars';
+
+/**
+ * A phone shows no scrollbars, so the copy inside the frame hides them. Content still scrolls by
+ * wheel, trackpad, touch and keyboard.
+ */
+export function hideFrameScrollbars(): void {
+  if (!isFramedDocument() || document.getElementById(HIDE_SCROLLBARS_ID)) return;
+  const style = document.createElement('style');
+  style.id = HIDE_SCROLLBARS_ID;
+  style.textContent = '* { scrollbar-width: none; } *::-webkit-scrollbar { display: none; }';
+  document.head.appendChild(style);
+}
+
 /** Address of the copy to load inside the frame. */
 export const framedUrl = (): string => `${window.location.pathname}?${FRAME_PARAM}=1`;
 

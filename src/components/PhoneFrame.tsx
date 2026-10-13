@@ -8,10 +8,11 @@ import { usePolicyStore } from '../store/usePolicyStore';
 import { usePreferencesStore } from '../store/usePreferencesStore';
 import { useRoomStore } from '../store/useRoomStore';
 import { themed } from '../theme/themed';
-import { colors, spacing } from '../theme/tokens';
+import { colors, fixed, spacing } from '../theme/tokens';
 import { PreferencesBar } from './PreferencesBar';
 
-const FRAME_RADIUS = 36;
+const FRAME_RADIUS = 48;
+const BEZEL_WIDTH = 10;
 const stores = [usePreferencesStore, useAccountStore, useBookingStore, usePolicyStore, useRoomStore];
 
 /**
@@ -36,10 +37,11 @@ export function PhoneFrame() {
         style={{
           width: PHONE_FRAME.width,
           maxWidth: '100%',
-          height: `min(${PHONE_FRAME.height}px, calc(100vh - 112px))`,
-          border: `1px solid ${colors.hairline}`,
+          height: `min(${PHONE_FRAME.height}px, calc(100vh - ${112 + BEZEL_WIDTH * 2}px))`,
+          // A dark bezel like a real handset; the hairline ring keeps its edge visible on the dark backdrop.
+          border: `${BEZEL_WIDTH}px solid ${fixed.bezel}`,
           borderRadius: FRAME_RADIUS,
-          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.28)',
+          boxShadow: '0 0 0 1px rgba(255, 255, 255, 0.14), 0 24px 60px rgba(0, 0, 0, 0.3)',
           background: colors.canvas,
         }}
       />
